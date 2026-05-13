@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0a0a">
+<title>Mango Sushi Wok POS</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+--bg:#0a0a0a;--card:#1a1a2e;--card2:#222240;
+--primary:#ff6b35;--primary2:#ff8c5a;--secondary:#00d9ff;
+--text:#ffffff;--text2:#f0f0f0;--muted:#b0b8d0;
+--success:#00ff88;--warning:#ffcc00;--danger:#ff4444;
+--border:#3a3a5a;--radius:16px;--radius-sm:12px;
+--shadow:0 4px 20px rgba(0,0,0,0.4);
+--transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:140px;overflow-x:hidden}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+.header{background:linear-gradient(135deg,#ff6b35,#ff8c5a);padding:16px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(255,107,53,0.2)}
+.header-content{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{font-size:36px}
+.logo h1{font-size:20px;font-weight:800;color:#ffffff}
+.logo p{font-size:11px;color:rgba(255,255,255,0.9);margin-top:2px}
+.lang-switch{display:flex;gap:6px;background:rgba(255,255,255,0.2);padding:4px;border-radius:12px}
+.lang-btn{padding:6px 14px;border:none;background:transparent;color:#ffffff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:var(--transition)}
+.lang-btn.active{background:#ffffff;color:#ff6b35}
+
+.container{max-width:1200px;margin:0 auto;padding:16px;animation:slideUp 0.4s}
+
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;transition:var(--transition);animation:slideUp 0.5s backwards}
+.stat:nth-child(1){animation-delay:0.1s}
+.stat:nth-child(2){animation-delay:0.2s}
+.stat:nth-child(3){animation-delay:0.3s}
+.stat:nth-child(4){animation-delay:0.4s}
+.stat:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+.stat-icon{font-size:32px;margin-bottom:8px;display:block}
+.stat-val{font-size:28px;font-weight:800;color:var(--primary);transition:var(--transition)}
+.stat-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px}
+
+.section{margin-bottom:24px;animation:fadeIn 0.6s backwards}
+.section h2{font-size:20px;font-weight:700;margin-bottom:16px;color:#ffffff;display:flex;align-items:center;gap:8px}
+.section h2::before{content:'';width:4px;height:20px;background:var(--primary);border-radius:2px}
+
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.tile{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:24px;cursor:pointer;transition:var(--transition);min-height:140px;display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;overflow:hidden}
+.tile:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:0 8px 30px rgba(255,107,53,0.2)}
+.tile:active{transform:scale(0.97)}
+.tile-icon{font-size:44px;margin-bottom:12px;transition:var(--transition)}
+.tile:hover .tile-icon{transform:scale(1.1)}
+.tile-lbl{font-size:16px;font-weight:700;margin-bottom:4px;color:#ffffff}
+.tile-desc{font-size:11px;color:var(--muted)}
+
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0;margin-bottom:16px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:10px 20px;background:var(--card);border:2px solid var(--border);border-radius:25px;font-size:14px;font-weight:600;white-space:nowrap;cursor:pointer;color:var(--muted);transition:var(--transition);flex-shrink:0}
+.tab.active{background:var(--primary);border-color:var(--primary);color:#ffffff;box-shadow:0 2px 12px rgba(255,107,53,0.3)}
+
+.menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.menu-item{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:var(--transition);position:relative;overflow:hidden}
+.menu-item:hover{transform:translateY(-3px);border-color:var(--primary);box-shadow:0 6px 20px rgba(255,107,53,0.15)}
+.menu-item:active{transform:scale(0.98)}
+.menu-emoji{font-size:44px;margin-bottom:8px;display:block}
+.menu-name{font-size:15px;font-weight:700;margin-bottom:4px;line-height:1.3;color:#ffffff;min-height:36px}
+.menu-desc{font-size:11px;color:var(--muted);margin-bottom:10px;min-height:28px;line-height:1.4}
+.menu-footer{display:flex;justify-content:space-between;align-items:center}
+.menu-price{font-size:18px;font-weight:800;color:var(--primary)}
+.add-btn{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary2));border:none;color:#ffffff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--transition);box-shadow:0 2px 8px rgba(255,107,53,0.3)}
+.add-btn:hover{transform:scale(1.1);box-shadow:0 4px 12px rgba(255,107,53,0.5)}
+
+.cart-bar{position:fixed;bottom:90px;left:16px;right:16px;max-width:1168px;margin:0 auto;background:var(--card);border:2px solid var(--primary);border-radius:var(--radius);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;z-index:90;transform:translateY(150%);transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);box-shadow:0 4px 20px rgba(255,107,53,0.2)}
+.cart-bar.show{transform:translateY(0)}
+.cart-info{display:flex;align-items:center;gap:12px}
+.cart-count{width:32px;height:32px;background:linear-gradient(135deg,var(--primary),var(--primary2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#ffffff;animation:pulse 1s infinite}
+.cart-total{font-size:20px;font-weight:800;color:var(--primary)}
+.checkout-btn{padding:12px 24px;background:linear-gradient(135deg,var(--primary),var(--primary2));border:none;border-radius:12px;color:#ffffff;font-size:14px;font-weight:700;cursor:pointer;transition:var(--transition);box-shadow:0 2px 12px rgba(255,107,53,0.3)}
+
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0;z-index:100;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border:none;background:none;color:var(--muted);font-size:10px;cursor:pointer;flex:1;transition:var(--transition);position:relative}
+.nav-icon{font-size:24px;transition:var(--transition)}
+.nav-btn.active{color:var(--primary)}
+.nav-btn.active .nav-icon{animation:pulse 0.5s}
+
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;visibility:hidden;transition:all 0.3s}
+.modal-overlay.open{opacity:1;visibility:visible}
+.modal{background:var(--card);border-radius:var(--radius) var(--radius) 0 0;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;padding:24px;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.4,0,0.2,1)}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.modal-title{font-size:22px;font-weight:700;color:#ffffff}
+.modal-close{width:36px;height:36px;border-radius:50%;background:var(--border);border:none;color:#ffffff;font-size:18px;cursor:pointer;transition:var(--transition);display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--danger);color:#ffffff;transform:rotate(90deg)}
+
+.form-group{margin-bottom:18px}
+.form-label{display:block;font-size:14px;color:#b0b8d0;margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.form-input,.form-select,.form-textarea{width:100%;padding:14px 16px;background:#0a0a0a;border:2px solid var(--border);border-radius:12px;color:#ffffff;font-size:16px;font-weight:500;outline:none;transition:var(--transition);font-family:inherit}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--primary);background:#ffffff}
+.form-textarea{resize:vertical;min-height:80px}
+
+.cart-item{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border)}
+.cart-item:last-child{border-bottom:none}
+.cart-item-name{font-weight:600;flex:1;font-size:15px;color:#ffffff}
+.cart-item-price{color:var(--primary);font-weight:700;margin:0 12px;font-size:15px}
+.qty-ctrl{display:flex;align-items:center;gap:8px}
+.qty-btn{width:32px;height:32px;border-radius:8px;background:var(--border);border:none;color:#ffffff;font-size:16px;cursor:pointer;transition:var(--transition);display:flex;align-items:center;justify-content:center}
+.qty-btn:hover{background:var(--primary);color:#ffffff;transform:scale(1.1)}
+.qty-val{font-weight:700;min-width:24px;text-align:center;font-size:16px;color:#ffffff}
+
+.cart-sum{margin-top:20px;padding-top:16px;border-top:2px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:22px;font-weight:800}
+.cart-sum-total{color:var(--primary)}
+
+.toast-box{position:fixed;top:16px;right:16px;z-index:300;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--card);border:2px solid var(--primary);border-radius:12px;padding:14px 18px;margin-bottom:8px;animation:fadeIn 0.4s;font-weight:600;font-size:14px;color:#ffffff;box-shadow:var(--shadow);max-width:300px}
+.toast.success{border-color:var(--success);color:var(--success)}
+.toast.error{border-color:var(--danger);color:var(--danger)}
+
+.page{display:none;animation:fadeIn 0.3s}
+.page.active{display:block}
+
+.badge{padding:4px 12px;border-radius:15px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:4px}
+.badge-free{background:rgba(0,170,85,0.15);color:var(--success);border:1px solid rgba(0,170,85,0.3)}
+.badge-occupied{background:rgba(255,51,51,0.15);color:var(--danger);border:1px solid rgba(255,51,51,0.3)}
+.badge-open{background:rgba(255,153,0,0.15);color:var(--warning);border:1px solid rgba(255,153,0,0.3)}
+.badge-ready{background:rgba(0,170,85,0.15);color:var(--success);border:1px solid rgba(0,170,85,0.3)}
+.badge-closed{background:rgba(102,102,102,0.15);color:var(--muted);border:1px solid rgba(102,102,102,0.3)}
+
+.inv-card{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;transition:var(--transition)}
+.inv-name{font-weight:600;flex:1;font-size:15px;color:#ffffff}
+.inv-stock{font-size:22px;font-weight:800;margin:0 12px;min-width:50px;text-align:right}
+.inv-stock.low{color:var(--danger);animation:pulse 1s infinite}
+.inv-stock.ok{color:var(--success)}
+
+.empty{text-align:center;padding:48px 16px;color:var(--muted);animation:fadeIn 0.5s}
+.empty-icon{font-size:56px;margin-bottom:16px;opacity:0.5}
+.empty-text{font-size:16px;font-weight:500}
+
+.order-card{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;cursor:pointer;transition:var(--transition);display:flex;justify-content:space-between;align-items:center}
+.order-card:hover{border-color:var(--primary);transform:translateX(4px);box-shadow:0 4px 15px rgba(255,107,53,0.1)}
+.order-id{font-size:18px;font-weight:800;color:var(--primary);margin-bottom:4px}
+.order-meta{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+.kitchen-card{background:var(--card);border:2px solid var(--border);border-left:5px solid var(--warning);border-radius:var(--radius);padding:18px;margin-bottom:14px;transition:var(--transition)}
+.kitchen-card.ready{border-left-color:var(--success)}
+.kh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.kh-id{font-size:20px;font-weight:800;color:var(--primary)}
+.kh-time{font-size:12px;color:var(--muted);background:var(--card2);padding:4px 10px;border-radius:8px}
+.ki{display:flex;justify-content:space-between;padding:6px 0;font-size:14px;border-bottom:1px solid var(--border)}
+.ki:last-child{border-bottom:none}
+.ki-q{font-weight:700;color:var(--secondary);margin-right:8px}
+.ka{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+.fab{position:fixed;bottom:100px;right:16px;width:56px;height:56px;background:linear-gradient(135deg,var(--primary),var(--primary2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;box-shadow:0 4px 20px rgba(255,107,53,0.4);z-index:90;border:none;transition:var(--transition)}
+.fab:hover{transform:scale(1.1) rotate(90deg);box-shadow:0 6px 30px rgba(255,107,53,0.6)}
+
+@media(max-width:480px){
+.container{padding:12px}
+.stats{grid-template-columns:repeat(2,1fr);gap:8px}
+.tiles{grid-template-columns:1fr;gap:10px}
+.menu-grid{grid-template-columns:1fr;gap:10px}
+.tile{padding:18px;min-height:120px}
+.menu-item{padding:12px}
+.section h2{font-size:18px}
+.stat-val{font-size:24px}
+.stat-icon{font-size:28px}
+.tile-icon,.menu-emoji{font-size:36px}
+.tile-lbl{font-size:14px}
+.menu-name{font-size:14px}
+.menu-price{font-size:16px}
+.header{padding:12px 16px}
+.logo h1{font-size:16px}
+}
+
+@media(min-width:768px){
+.stats{grid-template-columns:repeat(4,1fr)}
+.tiles{grid-template-columns:repeat(3,1fr)}
+.menu-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(min-width:1024px){
+.menu-grid{grid-template-columns:repeat(4,1fr)}
+.tiles{grid-template-columns:repeat(6,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="login-screen" style="position:fixed;top:0;left:0;right:0;bottom:0;background:#f0f0f0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px">
+<div style="background:#ffffff;border:2px solid #e0e0e0;border-radius:24px;padding:32px;max-width:400px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.1)">
+<div style="font-size:64px;margin-bottom:16px">🥭</div>
+<h2 style="font-size:24px;font-weight:800;margin-bottom:8px;color:#000000">MANGO SUSHI WOK</h2>
+<p style="color:#666666;margin-bottom:24px;font-size:14px">POS система - Вход</p>
+<div style="text-align:left">
+<div style="margin-bottom:16px">
+<label style="display:block;font-size:14px;color:#333333;margin-bottom:8px;font-weight:600">Логин</label>
+<input id="login-user" type="text" placeholder="admin или kasjer" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;color:#000000;font-size:16px;outline:none">
+</div>
+<div style="margin-bottom:24px">
+<label style="display:block;font-size:14px;color:#333333;margin-bottom:8px;font-weight:600">Пароль</label>
+<input id="login-pass" type="password" placeholder="••••••" style="width:100%;padding:14px 16px;background:#f8f8f8;border:2px solid #e0e0e0;border-radius:12px;color:#000000;font-size:16px;outline:none">
+</div>
+</div>
+<button onclick="doLogin()" style="width:100%;padding:16px;background:linear-gradient(135deg,#ff6b35,#ff8c5a);border:none;border-radius:12px;color:#ffffff;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(255,107,53,0.3)">Войти</button>
+<p id="login-error" style="color:#ff3333;margin-top:16px;font-size:14px;display:none">Неверный логин или пароль!</p>
+<div style="margin-top:20px;padding-top:20px;border-top:1px solid #e0e0e0">
+<p style="font-size:12px;color:#666666">Тестовые аккаунты:</p>
+<p style="font-size:12px;color:#666666;margin-top:4px">👨‍💼 <b>admin</b> / qwerty</p>
+<p style="font-size:12px;color:#666666">💳 <b>kasjer</b> / 123456</p>
+</div>
+</div>
+</div>
+
+<!-- Header -->
+<header class="header">
+<div class="header-content">
+<div class="logo">
+<span class="logo-icon">🥭</span>
+<div><h1>MANGO SUSHI WOK</h1><p id="t-subtitle">POS система</p></div>
+</div>
+<div style="display:flex;gap:8px;align-items:center">
+<div class="lang-switch">
+<button class="lang-btn active" id="btn-ru" onclick="setLang('ru')">RU</button>
+<button class="lang-btn" id="btn-pl" onclick="setLang('pl')">PL</button>
+</div>
+<button onclick="doLogout()" style="padding:6px 14px;background:rgba(255,255,255,0.2);border:none;border-radius:8px;color:#ffffff;font-size:13px;cursor:pointer;transition:var(--transition)" title="Выйти">🚪 <span id="logout-text">Выйти</span></button>
+</div>
+</div>
+</header>
+
+<!-- Dashboard Page -->
+<div class="page active" id="p-dashboard">
+<div class="container">
+<div class="stats">
+<div class="stat"><span class="stat-icon">💰</span><div class="stat-val" id="s-rev">0 zł</div><div class="stat-lbl" id="t-revenue">Выручка</div></div>
+<div class="stat"><span class="stat-icon">📋</span><div class="stat-val" id="s-ord">0</div><div class="stat-lbl" id="t-orders">Заказы</div></div>
+<div class="stat"><span class="stat-icon">🍽️</span><div class="stat-val" id="s-tbl">0/12</div><div class="stat-lbl" id="t-tables">Столы</div></div>
+<div class="stat"><span class="stat-icon">⚠️</span><div class="stat-val" id="s-alt">0</div><div class="stat-lbl" id="t-alerts">Тревоги</div></div>
+</div>
+
+<div class="section">
+<h2 id="t-quick">Быстрые действия</h2>
+<div class="tiles">
+<div class="tile" onclick="newOrder()"><span class="tile-icon">🧾</span><div class="tile-lbl" id="t-neworder">Новый заказ</div><div class="tile-desc" id="t-neworderdesc">Создать заказ</div></div>
+<div class="tile" onclick="goPage('tables')"><span class="tile-icon">🍽️</span><div class="tile-lbl" id="t-tables2">Столы</div><div class="tile-desc" id="t-tablesdesc">Управление</div></div>
+<div class="tile" onclick="goPage('menu')"><span class="tile-icon">🍱</span><div class="tile-lbl" id="t-menu">Меню</div><div class="tile-desc" id="t-menudesc">Блюда</div></div>
+<div class="tile" onclick="goPage('kitchen')"><span class="tile-icon">👨‍🍳</span><div class="tile-lbl" id="t-kitchen">Кухня</div><div class="tile-desc" id="t-kitchendesc">Заказы</div></div>
+<div class="tile" onclick="goPage('inventory')" id="tile-inventory"><span class="tile-icon">📦</span><div class="tile-lbl" id="t-inventory">Склад</div><div class="tile-desc" id="t-inventorydesc">Продукты</div></div>
+<div class="tile" onclick="goPage('stats')" id="tile-stats"><span class="tile-icon">📊</span><div class="tile-lbl" id="t-stats">Статистика</div><div class="tile-desc" id="t-statsdesc">Отчеты</div></div>
+<div class="tile" onclick="goPage('menu-editor')" id="tile-menu-editor"><span class="tile-icon">✏️</span><div class="tile-lbl" id="t-menueditor">Редактор меню</div><div class="tile-desc" id="t-menueditordesc">Изменить меню</div></div>
+</div>
+</div>
+
+<div class="section">
+<h2 id="t-recent">Последние заказы</h2>
+<div id="recent-list"></div>
+</div>
+</div>
+</div>
+
+<!-- Tables Page -->
+<div class="page" id="p-tables"><div class="container">
+<div class="section"><h2 id="t-tables3">Столы</h2>
+<div class="tabs">
+<button class="tab active" id="tab-all" onclick="showTables('all')">Все</button>
+<button class="tab" id="tab-free" onclick="showTables('free')">Свободные</button>
+<button class="tab" id="tab-occupied" onclick="showTables('occupied')">Занятые</button>
+</div>
+<div class="tiles" id="tbl-grid"></div>
+</div>
+</div></div>
+
+<!-- Menu Page -->
+<div class="page" id="p-menu"><div class="container">
+<div class="section">
+<div class="tabs" id="menu-tabs"></div>
+<div class="menu-grid" id="menu-grid"></div>
+</div>
+</div>
+<button class="fab" onclick="newOrder()">➕</button>
+</div>
+
+<!-- Kitchen Page -->
+<div class="page" id="p-kitchen"><div class="container">
+<div class="section"><h2 id="t-kitchen2">Кухня</h2>
+<div class="tabs">
+<button class="tab active" onclick="showKitchen('all')">Все</button>
+<button class="tab" onclick="showKitchen('open')">Новые</button>
+<button class="tab" onclick="showKitchen('cooking')">В работе</button>
+<button class="tab" onclick="showKitchen('ready')">Готовы</button>
+</div>
+<div id="kitchen-list"></div>
+</div>
+</div></div>
+
+<!-- Orders Page -->
+<div class="page" id="p-orders"><div class="container">
+<div class="section">
+<div class="tabs">
+<button class="tab active" id="o-all" onclick="showOrders('all')">Все</button>
+<button class="tab" id="o-open" onclick="showOrders('open')">Открытые</button>
+<button class="tab" id="o-cooking" onclick="showOrders('cooking')">В работе</button>
+<button class="tab" id="o-ready" onclick="showOrders('ready')">Готовы</button>
+<button class="tab" id="o-closed" onclick="showOrders('closed')">Закрыты</button>
+</div>
+<div id="orders-list"></div>
+</div>
+</div></div>
+
+<!-- Inventory Page -->
+<div class="page" id="p-inventory"><div class="container">
+<div class="section"><h2 id="t-inventory2">Склад</h2>
+<div class="tabs">
+<button class="tab active" onclick="showInventory('all')">Все</button>
+<button class="tab" onclick="showInventory('low')">Мало</button>
+<button class="tab" onclick="showInventory('fish')">Рыба</button>
+<button class="tab" onclick="showInventory('veg')">Овощи</button>
+</div>
+<div id="inv-list"></div>
+</div>
+</div></div>
+
+<!-- Menu Editor Page -->
+<div class="page" id="p-menu-editor"><div class="container">
+<div class="section"><h2 id="t-menueditor2">Редактор меню</h2>
+<div class="tabs" id="editor-tabs"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+<button class="checkout-btn" onclick="openAddItemModal()" style="font-size:14px;padding:10px 20px">➕ Добавить блюдо</button>
+<button class="checkout-btn" onclick="saveMenuChanges()" style="background:var(--success);font-size:14px;padding:10px 20px">💾 Сохранить</button>
+</div>
+<div id="editor-grid" class="menu-grid"></div>
+</div>
+</div></div>
+
+<!-- Stats Page -->
+<div class="page" id="p-stats"><div class="container">
+<div class="section"><h2 id="t-stats2">Статистика</h2>
+<div class="stats" id="stats-detail"></div>
+</div>
+<div class="section"><h2 id="t-popular">Популярные блюда</h2>
+<div id="popular-list"></div>
+</div>
+</div></div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+<button class="nav-btn active" onclick="goPage('dashboard')"><span class="nav-icon">🏠</span><span id="n-home">Главная</span></button>
+<button class="nav-btn" onclick="goPage('tables')"><span class="nav-icon">🍽️</span><span id="n-tables">Столы</span></button>
+<button class="nav-btn" onclick="goPage('menu')"><span class="nav-icon">🍱</span><span id="n-menu">Меню</span></button>
+<button class="nav-btn" onclick="goPage('kitchen')"><span class="nav-icon">👨‍🍳</span><span id="n-kitchen">Кухня</span></button>
+<button class="nav-btn" onclick="goPage('stats')" id="nav-stats"><span class="nav-icon">📊</span><span id="n-stats">Статы</span></button>
+</nav>
+
+<!-- Cart Bar -->
+<div class="cart-bar" id="cart-bar">
+<div class="cart-info">
+<div class="cart-count" id="cart-count">0</div>
+<div class="cart-total" id="cart-total">0 zł</div>
+</div>
+<button class="checkout-btn" id="btn-checkout" onclick="openCheckout()">Оформить</button>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-box" id="toast-box"></div>
+
+<!-- Checkout Modal -->
+<div class="modal-overlay" id="m-checkout">
+<div class="modal">
+<div class="modal-head">
+<h3 class="modal-title" id="m-checkout-title">Оформление</h3>
+<button class="modal-close" onclick="closeModal('m-checkout')">✕</button>
+</div>
+<div class="form-group"><label class="form-label" id="l-ordertype">Тип заказа</label>
+<select class="form-select" id="order-type" onchange="toggleDel()"><option value="table" id="opt-table">Стол</option><option value="delivery" id="opt-delivery">Доставка</option></select></div>
+<div class="form-group" id="fg-table"><label class="form-label" id="l-selecttable">Выберите стол</label><select class="form-select" id="table-sel"></select></div>
+<div id="fg-del" style="display:none">
+<div class="form-group"><label class="form-label" id="l-custname">Имя</label><input class="form-input" id="cust-name" placeholder="Иван"></div>
+<div class="form-group"><label class="form-label" id="l-custphone">Телефон</label><input class="form-input" id="cust-phone" placeholder="+48 000 000 000"></div>
+<div class="form-group"><label class="form-label" id="l-address">Адрес</label><textarea class="form-textarea" id="del-addr" rows="2"></textarea></div>
+</div>
+<div id="checkout-items"></div>
+<div class="cart-sum"><span id="l-total">Итого:</span><span class="cart-sum-total" id="checkout-total">0 zł</span></div>
+<button class="checkout-btn" style="width:100%;margin-top:16px;padding:16px;font-size:16px" id="btn-create" onclick="submitOrder()">Создать заказ</button>
+</div>
+</div>
+
+<!-- Order Detail Modal -->
+<div class="modal-overlay" id="m-order">
+<div class="modal">
+<div class="modal-head"><h3 class="modal-title" id="m-order-title">Заказ</h3><button class="modal-close" onclick="closeModal('m-order')">✕</button></div>
+<div id="order-content"></div>
+</div>
+</div>
+
+<!-- Payment Method Modal -->
+<div class="modal-overlay" id="m-payment">
+<div class="modal">
+<div class="modal-head"><h3 class="modal-title" id="t-payment-title">Способ оплаты</h3><button class="modal-close" onclick="closeModal('m-payment')">✕</button></div>
+<p style="margin-bottom:20px;color:#ffffff;font-size:16px" id="t-payment-desc">Выберите способ оплаты для заказа #<span id="pay-order-id"></span></p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+<button class="checkout-btn" style="padding:24px;font-size:18px;background:linear-gradient(135deg,#4CAF50,#45a049)" onclick="submitPayment('card')">💳<br><span id="t-card">Карта</span></button>
+<button class="checkout-btn" style="padding:24px;font-size:18px;background:linear-gradient(135deg,#ff9800,#f57c00)" onclick="submitPayment('cash')">💵<br><span id="t-cash">Наличные</span></button>
+</div>
+</div>
+</div>
+
+<!-- Edit Item Modal -->
+<div class="modal-overlay" id="m-edit-item">
+<div class="modal">
+<div class="modal-head"><h3 class="modal-title">Редактировать блюдо</h3><button class="modal-close" onclick="closeModal('m-edit-item')">✕</button></div>
+<input type="hidden" id="edit-item-id">
+<div class="form-group"><label class="form-label">Название (RU)</label><input class="form-input" id="edit-nr" placeholder="Название на русском"></div>
+<div class="form-group"><label class="form-label">Nazwa (PL)</label><input class="form-input" id="edit-np" placeholder="Nazwa po polsku"></div>
+<div class="form-group"><label class="form-label">Цена (zł)</label><input class="form-input" id="edit-p" type="number" placeholder="0"></div>
+<div class="form-group"><label class="form-label">Описание (RU)</label><textarea class="form-textarea" id="edit-dr" rows="2" placeholder="Описание на русском"></textarea></div>
+<div class="form-group"><label class="form-label">Opis (PL)</label><textarea class="form-textarea" id="edit-dp" rows="2" placeholder="Opis po polsku"></textarea></div>
+<div class="form-group"><label class="form-label">Категория</label><select class="form-select" id="edit-c"><option value="sets">🎁 Сеты</option><option value="sushi_rolls">🍣 Роллы</option><option value="maki">🍙 Маки</option><option value="nigiri">🍣 Нигири</option><option value="sashimi">🐟 Сашими</option><option value="hot">🔥 Горячее</option><option value="soup">🍲 Супы</option><option value="wok">🍜 Wok</option><option value="drinks">🥤 Напитки</option><option value="dessert">🍦 Десерты</option></select></div>
+<div style="display:flex;gap:12px;margin-top:20px">
+<button class="checkout-btn" style="flex:1;background:var(--success)" onclick="saveEditItem()">💾 Сохранить</button>
+<button class="checkout-btn" style="flex:1;background:var(--danger)" onclick="deleteEditItem()">🗑️ Удалить</button>
+</div>
+</div>
+</div>
+
+<script>
+// ===== TELEGRAM INIT =====
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+// ===== MENU DATA =====
+const MENU=[
+// СЕТЫ
+{id:1,nr:"Сет Премиум",np:"Zestaw Premium",p:120,c:"sets",dr:"Филадельфия, Дракон, Сашими микс",dp:"Filadelfia, Smok, Sashimi mix",e:"🎁"},
+{id:2,nr:"Сет Вечеринка",np:"Zestaw Imprezowy",p:160,c:"sets",dr:"Большой набор для компании 6-8 человек",dp:"Duży zestaw na 6-8 osób",e:"🎉"},
+{id:3,nr:"Сет для двоих",np:"Zestaw dla dwojga",p:80,c:"sets",dr:"Для романтического ужина",dp:"Na romantyczną kolację",e:"💕"},
+{id:4,nr:"Сет Семейный",np:"Zestaw Rodzinny",p:140,c:"sets",dr:"Большой набор для семьи 4-5 человек",dp:"Duży zestaw na 4-5 osób",e:"👨‍👩‍👧‍👦"},
+{id:5,nr:"Сет Романтический",np:"Zestaw Romantyczny",p:90,c:"sets",dr:"Изысканный набор на двоих",dp:"Wykwintny zestaw dla dwojga",e:"🌹"},
+{id:6,nr:"Сет Бизнес",np:"Zestaw Biznes",p:65,c:"sets",dr:"Обеденный сет на 2 персоны",dp:"Zestaw obiadowy na 2 osoby",e:"💼"},
+
+// РОЛЛЫ
+{id:7,nr:"Филадельфия Люкс",np:"Filadelfia Lux",p:28,c:"sushi_rolls",dr:"Лосось, сыр, огурец, авокадо",dp:"Łosoś, ser, ogórek, awokado",e:"🍣"},
+{id:8,nr:"Калифорния",np:"Kalifornia",p:22,c:"sushi_rolls",dr:"Краб, авокадо, огурец",dp:"Krab, awokado, ogórek",e:"🦀"},
+{id:9,nr:"Дракон",np:"Smok",p:26,c:"sushi_rolls",dr:"Угорь, авокадо, унаги",dp:"Węgorz, awokado, unagi",e:"🐉"},
+{id:10,nr:"Красная площадь",np:"Czerwony Plac",p:32,c:"sushi_rolls",dr:"Лосось, тунец, сыр",dp:"Łosoś, tuńczyk, ser",e:"🔴"},
+{id:11,nr:"Зелёный дракон",np:"Zielony Smok",p:25,c:"sushi_rolls",dr:"Угорь, авокадо, огурец",dp:"Węgorz, awokado, ogórek",e:"🥑"},
+{id:12,nr:"Радуга",np:"Tęcza",p:30,c:"sushi_rolls",dr:"Losoś, tuńczyk, żółtopłetwy, awokado",dp:"Łosoś, tuńczyk, żółtopłetwy, awokado",e:"🌈"},
+
+// МАКИ
+{id:13,nr:"Маки с лососем",np:"Maki z łososiem",p:12,c:"maki",dr:"Лосось, рис, нори",dp:"Łosoś, ryż, nori",e:"🍙"},
+{id:14,nr:"Маки с огурцом",np:"Maki z ogórkiem",p:8,c:"maki",dr:"Огурец, рис, нори",dp:"Ogórek, ryż, nori",e:"🥒"},
+{id:15,nr:"Маки с тунцом",np:"Maki z tuńczykiem",p:14,c:"maki",dr:"Тунец, рис, нори",dp:"Tuńczyk, ryż, nori",e:"🐟"},
+{id:16,nr:"Маки с авокадо",np:"Maki z awokado",p:10,c:"maki",dr:"Авокадо, рис, нори",dp:"Awokado, ryż, nori",e:"🥑"},
+
+// НИГИРИ
+{id:17,nr:"Нигири с лососем",np:"Nigiri z łososiem",p:10,c:"nigiri",dr:"Лосось, рис",dp:"Łosoś, ryż",e:"🍣"},
+{id:18,nr:"Нигири с тунцом",np:"Nigiri z tuńczykiem",p:12,c:"nigiri",dr:"Тунец, рис",dp:"Tuńczyk, ryż",e:"🐟"},
+{id:19,nr:"Nigiri с угрем",np:"Nigiri z węgorzem",p:14,c:"nigiri",dr:"Угорь, рис, унаги",dp:"Węgorz, ryż, unagi",e:"🍱"},
+{id:20,nr:"Nigiri с креветкой",np:"Nigiri z krewetką",p:10,c:"nigiri",dr:"Креветка, рис, васаби",dp:"Krewetka, ryż, wasabi",e:"🦐"},
+
+// САШИМИ
+{id:21,nr:"Sashimi микс",np:"Sashimi mix",p:38,c:"sashimi",dr:"Лосось, тунец, желтохвост",dp:"Łosoś, tuńczyk, żółtopłetwy",e:"🐟"},
+{id:22,nr:"Sashimi из лосося",np:"Sashimi z łososia",p:28,c:"sashimi",dr:"Свежий лосось, 6 шт",dp:"Świeży łosoś, 6 szt",e:"🍣"},
+{id:23,nr:"Sashimi из тунца",np:"Sashimi z tuńczyka",p:32,c:"sashimi",dr:"Свежий тунец, 6 шт",dp:"Świeży tuńczyk, 6 szt",e:"🐟"},
+
+// ГОРЯЧЕЕ
+{id:24,nr:"Темпура креветки",np:"Krewetka tempura",p:24,c:"hot",dr:"Креветки в кляре",dp:"Krewetki w cieście",e:"🍤"},
+{id:25,nr:"Якитори",np:"Yakitori",p:18,c:"hot",dr:"Курица на гриле",dp:"Kurczak z grilla",e:"🍢"},
+{id:26,nr:"Эдамаме",np:"Edamame",p:12,c:"hot",dr:"Соевые бобы",dp:"Soja",e:"🫘"},
+{id:27,nr:"Гедза",np:"Gyoza",p:16,c:"hot",dr:"Японские пельмени 5 шт",dp:"Japońskie pierożki 5 szt",e:"🥟"},
+
+// СУПЫ
+{id:28,nr:"Miso суп",np:"Zupa miso",p:10,c:"soup",dr:"Традиционный суп",dp:"Tradycyjna zupa",e:"🍲"},
+{id:29,nr:"Рамен",np:"Ramen",p:26,c:"soup",dr:"Бульон, лапша, курица",dp:"Rosół, makaron, kurczak",e:"🍜"},
+{id:30,nr:"Том Ям",np:"Tom Yum",p:28,c:"soup",dr:"Острый суп с креветками",dp:"Ostra zupa z krewetkami",e:"🦐"},
+{id:31,nr:"Удон суп",np:"Zupa udon",p:24,c:"soup",dr:"Бульон, удон, овощи",dp:"Rosół, udon, warzywa",e:"🍲"},
+
+// WOK
+{id:32,nr:"Удон с морепродуктами",np:"Udon z owocami morza",p:28,c:"wok",dr:"Удон, креветки, овощи",dp:"Udon, krewetki, warzywa",e:"🍜"},
+{id:33,nr:"Соба с говядиной",np:"Soba z wołowiną",p:26,c:"wok",dr:"Гречневая лапша, говядина",dp:"Makaron gryczany, wołowina",e:"🥩"},
+{id:34,nr:"Якисоба",np:"Yakisoba",p:24,c:"wok",dr:"Жареная лапша",dp:"Smażony makaron",e:"🍝"},
+{id:35,nr:"Рис с морепродуктами",np:"Ryż z owocami morza",p:26,c:"wok",dr:"Жареный рис, креветки, овощи",dp:"Smażony ryż, krewetki, warzywa",e:"🍚"},
+
+// НАПИТКИ
+{id:36,nr:"Зелёный чай",np:"Zielona herbata",p:6,c:"drinks",dr:"Японский чай",dp:"Japońska herbata",e:"🍵"},
+{id:37,nr:"Саке",np:"Sake",p:28,c:"drinks",dr:"Рисовое вино 300мл",dp:"Wino ryżowe 300ml",e:"🍶"},
+{id:38,nr:"Асахи пиво",np:"Piwo Asahi",p:18,c:"drinks",dr:"Японское пиво 330мл",dp:"Japońskie piwo 330ml",e:"🍺"},
+{id:39,nr:"Ramune",np:"Ramune",p:12,c:"drinks",dr:"Газировка",dp:"Napój gazowany",e:"🥤"},
+{id:40,nr:"Японский лимонад",np:"Limonada japońska",p:14,c:"drinks",dr:"Цитрусовый лимонад",dp:"Cytrusowa lemoniada",e:"🍋"},
+
+// ДЕСЕРТЫ
+{id:41,nr:"Моти микс",np:"Mochi mix",p:16,c:"dessert",dr:"Рисовые пирожные 3 шт",dp:"Ciastka ryżowe 3 szt",e:"🍡"},
+{id:42,nr:"Мороженое маття",np:"Lody matcha",p:12,c:"dessert",dr:"Зелёный чай",dp:"Zielona herbata",e:"🍦"},
+{id:43,nr:"Дораяки",np:"Dorayaki",p:14,c:"dessert",dr:"Блинчики с фасолью",dp:"Naleśniki z fasolą",e:"🥞"},
+{id:44,nr:"Чизкейк",np:"Sernik",p:18,c:"dessert",dr:"Классический чизкейк",dp:"Klasyczny sernik",e:"🍰"}
+];
+
+// ===== INVENTORY DATA =====
+const INV=[
+{id:1,nr:"Лосось",np:"Łosoś",u:"кг",s:5,m:1,cost:40,cat:"fish"},
+{id:2,nr:"Тунец",np:"Tuńczyk",u:"кг",s:3,m:0.5,cost:60,cat:"fish"},
+{id:3,nr:"Угорь",np:"Węgorz",u:"кг",s:1.5,m:0.3,cost:75,cat:"fish"},
+{id:4,nr:"Рис",np:"Ryż",u:"кг",s:10,m:2,cost:6,cat:"grains"},
+{id:5,nr:"Нори",np:"Nori",u:"уп",s:20,m:5,cost:4,cat:"supplies"},
+{id:6,nr:"Сливочный сыр",np:"Ser kremowy",u:"кг",s:2,m:0.5,cost:22,cat:"dairy"},
+{id:7,nr:"Авокадо",np:"Awokado",u:"шт",s:15,m:5,cost:3,cat:"veg"},
+{id:8,nr:"Огурец",np:"Ogórek",u:"кг",s:3,m:0.5,cost:4,cat:"veg"},
+{id:9,nr:"Соус унаги",np:"Sos unagi",u:"л",s:2,m:0.5,cost:15,cat:"sauces"},
+{id:10,nr:"Икра масаго",np:"Ikra masago",u:"кг",s:0.5,m:0.1,cost:100,cat:"seafood"},
+{id:11,nr:"Креветки",np:"Krewetki",u:"кг",s:2,m:0.5,cost:30,cat:"seafood"},
+{id:12,nr:"Курица",np:"Kurczak",u:"кг",s:3,m:1,cost:12,cat:"meat"},
+{id:13,nr:"Паста мисо",np:"Pasta miso",u:"кг",s:1,m:0.2,cost:20,cat:"supplies"},
+{id:14,nr:"Лапша удон",np:"Makaron udon",u:"кг",s:2,m:0.5,cost:10,cat:"grains"},
+{id:15,nr:"Водоросли",np:"Wodorosty",u:"кг",s:0.5,m:0.1,cost:30,cat:"supplies"}
+];
+
+// ===== TRANSLATIONS =====
+const T={
+ru:{subtitle:"POS система",revenue:"Выручка",orders:"Заказы",tables:"Столы",alerts:"Тревоги",quick:"Быстрые действия",neworder:"Новый заказ",neworderdesc:"Создать заказ",tablesdesc:"Управление столами",menu:"Меню",menudesc:"Блюда и цены",kitchen:"Кухня",kitchendesc:"Заказы в работу",inventory:"Склад",inventorydesc:"Учет продуктов",stats:"Статистика",statsdesc:"Отчеты",recent:"Последние заказы",checkout:"Оформить",ordertype:"Тип заказа",table:"Стол",delivery:"Доставка",selecttable:"Выберите стол",custname:"Имя клиента",custphone:"Телефон",address:"Адрес",total:"Итого:",createorder:"Создать заказ",all:"Все",free:"Свободные",occupied:"Занятые",open:"Открытые",cooking:"В работе",ready:"Готовы",closed:"Закрыты",home:"Главная",stats2:"Статы",ordercreated:"✅ Заказ создан!",noorders:"Нет заказов",addtocart:"Добавлено",popular:"Популярные блюда",closeorder:"Закрыть",startcooking:"Готовить",markready:"Готово",lowstock:"Мало",cat_sets:"🎁 Сеты",cat_sushi_rolls:"🍣 Роллы",cat_maki:"🍙 Маки",cat_nigiri:"🍣 Нигири",cat_sashimi:"🐟 Сашими",cat_hot:"🔥 Горячее",cat_soup:"🍲 Супы",cat_wok:"🍜 Wok",cat_drinks:"🥤 Напитки",cat_dessert:"🍦 Десерты",profit:"Прибыль",totalorders:"Всего заказов",avgcheck:"Средний чек",stockvalue:"Склад",sold:"продано",items:"Позиции",orderdetail:"Заказ №",payment:"Способ оплаты",card:"Карта",cash:"Наличные",cardrev:"Картой",cashrev:"Наличными"},
+pl:{subtitle:"System POS",revenue:"Przychód",orders:"Zamówienia",tables:"Stoliki",alerts:"Alerty",quick:"Szybkie akcje",neworder:"Nowe zamówienie",neworderdesc:"Utwórz zamówienie",tablesdesc:"Zarządzanie stolikami",menu:"Menu",menudesc:"Dania i ceny",kitchen:"Kuchnia",kitchendesc:"Zamówienia",inventory:"Magazyn",inventorydesc:"Kontrola zapasów",stats:"Statystyki",statsdesc:"Raporty",recent:"Ostatnie zamówienia",checkout:"Do kasy",ordertype:"Typ zamówienia",table:"Stolik",delivery:"Dostawa",selecttable:"Wybierz stolik",custname:"Imię klienta",custphone:"Telefon",address:"Adres",total:"Razem:",createorder:"Utwórz zamówienie",all:"Wszystkie",free:"Wolne",occupied:"Zajęte",open:"Otwarte",cooking:"W przygotowaniu",ready:"Gotowe",closed:"Zamknięte",home:"Strona główna",stats2:"Statystyki",ordercreated:"✅ Zamówienie utworzone!",noorders:"Brak zamówień",addtocart:"Dodano",popular:"Popularne dania",closeorder:"Zamknij",startcooking:"Rozpocznij",markready:"Gotowe",lowstock:"Mało",cat_sets:"🎁 Zestawy",cat_sushi_rolls:"🍣 Roladki",cat_maki:"🍙 Maki",cat_nigiri:"🍣 Nigiri",cat_sashimi:"🐟 Sashimi",cat_hot:"🔥 Dania gorące",cat_soup:"🍲 Zupy",cat_wok:"🍜 Wok",cat_drinks:"🥤 Napoje",cat_dessert:"🍦 Desery",profit:"Zysk",totalorders:"Wszystkie zamówienia",avgcheck:"Średni rachunek",stockvalue:"Magazyn",sold:"sprzedano",items:"Pozycje",orderdetail:"Zamówienie nr",payment:"Płatność",card:"Karta",cash:"Gotówka",cardrev:"Kartą",cashrev:"Gotówką"}
+};
+
+// ===== STATE =====
+let lang='ru',cart=[],orders=[],oid=1,curCat='all';
+let userRole='admin';
+let paymentStats={card:0,cash:0};
+const tables=Array.from({length:12},(_,i)=>({id:i+1,nr:'Стол '+(i+1),np:'Stolik '+(i+1),cap:4,status:'free',oid:null}));
+
+// ===== SAVE/LOAD DATA =====
+function saveData(){
+try{
+localStorage.setItem('mango_orders',JSON.stringify(orders));
+localStorage.setItem('mango_oid',oid.toString());
+localStorage.setItem('mango_payment',JSON.stringify(paymentStats));
+}catch(e){console.log('Save error:',e)}
+}
+
+function loadData(){
+try{
+var o=localStorage.getItem('mango_orders');
+if(o)orders=JSON.parse(o);
+var i=localStorage.getItem('mango_oid');
+if(i)oid=parseInt(i);
+var p=localStorage.getItem('mango_payment');
+if(p)paymentStats=JSON.parse(p);
+}catch(e){console.log('Load error:',e)}
+}
+
+// ===== LOGIN FUNCTION =====
+function doLogin(){
+var u=document.getElementById('login-user').value.trim().toLowerCase();
+var p=document.getElementById('login-pass').value;
+var err=document.getElementById('login-error');
+
+if(u==='admin'&&p==='qwerty'){
+userRole='admin';
+document.getElementById('login-screen').style.display='none';
+localStorage.setItem('mango_user',u);
+localStorage.setItem('mango_role','admin');
+loadData();
+renderDash();
+renderMenuEditor();
+toast('Добро пожаловать, Администратор!','success');
+updateRoleUI();
+}else if(u==='kasjer'&&p==='123456'){
+userRole='cashier';
+document.getElementById('login-screen').style.display='none';
+localStorage.setItem('mango_user',u);
+localStorage.setItem('mango_role','cashier');
+loadData();
+renderDash();
+renderMenuEditor();
+toast('Добро пожаловать, Кассир!','success');
+updateRoleUI();
+}else{
+err.style.display='block';
+err.textContent=lang==='pl'?'Błędny login lub hasło!':'Неверный логин или пароль!';
+}
+}
+
+// ===== LOGOUT FUNCTION =====
+function doLogout(){
+localStorage.removeItem('mango_user');
+localStorage.removeItem('mango_role');
+document.getElementById('login-screen').style.display='flex';
+document.getElementById('login-user').value='';
+document.getElementById('login-pass').value='';
+document.getElementById('login-error').style.display='none';
+toast(lang==='ru'?'Вы вышли из системы':'Wylogowano','success');
+}
+
+// ===== AUTO LOGIN =====
+function checkAutoLogin(){
+var savedUser=localStorage.getItem('mango_user');
+var savedRole=localStorage.getItem('mango_role');
+if(savedUser&&savedRole){
+userRole=savedRole;
+document.getElementById('login-screen').style.display='none';
+loadData();
+renderDash();
+renderMenuEditor();
+updateRoleUI();
+}
+}
+
+function updateRoleUI(){
+if(userRole==='cashier'){
+var el;
+el=document.getElementById('tile-inventory');if(el)el.style.display='none';
+el=document.getElementById('tile-stats');if(el)el.style.display='none';
+el=document.getElementById('nav-stats');if(el)el.style.display='none';
+el=document.getElementById('tile-menu-editor');if(el)el.style.display='none';
+}
+}
+
+document.addEventListener('keydown',function(e){
+if(e.key==='Enter'){
+var loginScreen=document.getElementById('login-screen');
+if(loginScreen&&loginScreen.style.display!=='none'){
+doLogin();
+}
+}
+});
+
+// ===== HELPER FUNCTIONS =====
+function tn(o){return lang==='pl'?(o.np||o.nr):o.nr}
+function t(k){return T[lang][k]||k}
+function pr(v){return Math.round(v)+' zł'}
+function tm(iso){if(!iso)return'';return new Date(iso).toLocaleTimeString(lang,{hour:'2-digit',minute:'2-digit'})}
+function toast(m,type){
+var e=document.createElement('div');e.className='toast'+(type?' '+type:'');e.textContent=m;
+document.getElementById('toast-box').appendChild(e);
+setTimeout(function(){e.style.opacity='0';setTimeout(function(){e.remove()},300)},3000)
+}
+
+// ===== LANGUAGE SWITCH =====
+function setLang(l){
+lang=l;
+document.getElementById('btn-ru').classList.toggle('active',l==='ru');
+document.getElementById('btn-pl').classList.toggle('active',l==='pl');
+var ids=['subtitle','revenue','orders','tables','alerts','quick','neworder','neworderdesc','tablesdesc','menu','menudesc','kitchen','kitchendesc','inventory','inventorydesc','stats','statsdesc','recent','checkout','ordertype','table','delivery','selecttable','custname','custphone','address','total','createorder','all','free','occupied','open','cooking','ready','closed','home','stats2','popular'];
+for(var i=0;i<ids.length;i++){var e=document.getElementById('t-'+ids[i])||document.getElementById('l-'+ids[i])||document.getElementById('n-'+ids[i]);if(e&&T[lang][ids[i]])e.textContent=T[lang][ids[i]]}
+document.getElementById('m-order-title').innerHTML=t('orderdetail')+' <span id="oid-d"></span>';
+renderCur();updateCart();updatePaymentUI();
+}
+
+// ===== NAVIGATION =====
+function goPage(p){
+document.querySelectorAll('.page').forEach(function(x){x.classList.remove('active')});
+document.querySelectorAll('.nav-btn').forEach(function(x){x.classList.remove('active')});
+var pg=document.getElementById('p-'+p);
+if(pg)pg.classList.add('active');
+var nm={dashboard:0,tables:1,menu:2,kitchen:3,orders:4,inventory:4,stats:4};
+var ni=nm[p];
+if(ni!==undefined&&document.querySelectorAll('.nav-btn')[ni])document.querySelectorAll('.nav-btn')[ni].classList.add('active');
+renderCur();
+}
+
+function renderCur(){
+var a=document.querySelector('.page.active');
+if(!a)return;
+var id=a.id.replace('p-','');
+if(id==='dashboard')renderDash();
+else if(id==='tables')renderTables();
+else if(id==='menu')renderMenu();
+else if(id==='kitchen')renderKitchen();
+else if(id==='orders')renderOrders();
+else if(id==='inventory')renderInv();
+else if(id==='stats')renderStats();
+else if(id==='menu-editor')renderMenuEditor();
+}
+
+// ===== DASHBOARD =====
+function renderDash(){
+var rev=orders.filter(function(o){return o.status==='closed'}).reduce(function(s,o){return s+o.total},0);
+var occ=tables.filter(function(t){return t.status==='occupied'}).length;
+var low=INV.filter(function(i){return i.s<=i.m}).length;
+document.getElementById('s-rev').textContent=pr(rev);
+document.getElementById('s-ord').textContent=orders.length;
+document.getElementById('s-tbl').textContent=occ+'/12';
+document.getElementById('s-alt').textContent=low;
+var r=orders.slice(-5).reverse();
+var c=document.getElementById('recent-list');
+if(r.length===0){c.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">'+t('noorders')+'</div></div>'}
+else{c.innerHTML=r.map(function(o){return'<div class="order-card" onclick="showOrder('+o.id+')"><div class="order-info"><div class="order-id">#'+o.id+'</div><div class="order-meta"><span>'+tm(o.created)+'</span><span>•</span><span>'+o.items.length+' поз.</span><span>•</span><span>'+pr(o.total)+'</span></div></div><span class="badge badge-'+o.status+'">'+t(o.status)+'</span></div>'}).join('')}
+}
+
+// ===== TABLES =====
+function renderTables(f){
+f=f||'all';
+var c=document.getElementById('tbl-grid');
+var list=tables;
+if(f!=='all')list=tables.filter(function(t){return t.status===f});
+c.innerHTML=list.map(function(tb){var occ=tb.status==='occupied';return'<div class="tile" onclick="'+(occ?'showOrder('+tb.oid+')':'quickOrd('+tb.id+')')+'"><div class="tile-icon">'+(occ?'🔴':'🟢')+'</div><div class="tile-lbl">'+tb.nr+'</div><div class="tile-desc">'+tb.cap+' '+(lang==='ru'?'мест':'miejsc')+'</div><span class="badge badge-'+tb.status+'" style="margin-top:8px">'+t(tb.status)+'</span></div>'}).join('');
+}
+function showTables(f){
+document.querySelectorAll('#p-tables .tab').forEach(function(t){t.classList.toggle('active',t.id==='tab-'+f)});
+renderTables(f);
+}
+function quickOrd(tid){
+cart=[];updateCart();
+document.getElementById('order-type').value='table';toggleDel();
+document.getElementById('table-sel').value=tid;
+openModal('m-checkout');
+}
+
+// ===== MENU =====
+function renderMenu(cat){
+cat=cat||'all';curCat=cat;
+var cats=[];
+for(var i=0;i<MENU.length;i++){if(cats.indexOf(MENU[i].c)===-1)cats.push(MENU[i].c)}
+document.getElementById('menu-tabs').innerHTML='<button class="tab '+(cat==='all'?'active':'')+'" onclick="renderMenu(\'all\')">'+t('all')+'</button>'+cats.map(function(c){return'<button class="tab '+(cat===c?'active':'')+'" onclick="renderMenu(\''+c+'\')">'+t('cat_'+c)+'</button>'}).join('');
+var items=cat==='all'?MENU:MENU.filter(function(m){return m.c===cat});
+document.getElementById('menu-grid').innerHTML=items.map(function(item){return'<div class="menu-item" onclick="addToCart('+item.id+')"><span class="menu-emoji">'+item.e+'</span><div class="menu-name">'+tn(item)+'</div><div class="menu-desc">'+(lang==='pl'?item.dp:item.dr)+'</div><div class="menu-footer"><span class="menu-price">'+pr(item.p)+'</span><button class="add-btn" onclick="event.stopPropagation();addToCart('+item.id+')">+</button></div></div>'}).join('');
+}
+
+// ===== CART =====
+function addToCart(id){
+var item=MENU.find(function(m){return m.id===id});
+if(!item)return;
+var ex=cart.find(function(c){return c.id===id});
+if(ex)ex.q++;else cart.push({id:item.id,name:tn(item),p:item.p,q:1});
+updateCart();
+toast(t('addtocart')+' '+tn(item));
+}
+function updateCart(){
+var total=cart.reduce(function(s,i){return s+i.p*i.q},0);
+var count=cart.reduce(function(s,i){return s+i.q},0);
+document.getElementById('cart-count').textContent=count;
+document.getElementById('cart-total').textContent=pr(total);
+document.getElementById('cart-bar').classList.toggle('show',count>0);
+}
+
+// ===== CHECKOUT =====
+function newOrder(){cart=[];updateCart();loadTblOpt();document.getElementById('order-type').value='table';toggleDel();openModal('m-checkout')}
+function toggleDel(){
+var d=document.getElementById('order-type').value==='delivery';
+document.getElementById('fg-table').style.display=d?'none':'block';
+document.getElementById('fg-del').style.display=d?'block':'none';
+}
+function loadTblOpt(){
+var sel=document.getElementById('table-sel');
+sel.innerHTML=tables.filter(function(t){return t.status==='free'}).map(function(t){return'<option value="'+t.id+'">'+t.nr+'</option>'}).join('');
+}
+function openCheckout(){if(cart.length===0)return;loadTblOpt();renderCOItems();openModal('m-checkout')}
+function renderCOItems(){
+var c=document.getElementById('checkout-items');
+c.innerHTML=cart.map(function(item){return'<div class="cart-item"><span class="cart-item-name">'+item.name+'</span><div class="qty-ctrl"><button class="qty-btn" onclick="chgQty('+item.id+',-1)">−</button><span class="qty-val">'+item.q+'</span><button class="qty-btn" onclick="chgQty('+item.id+',1)">+</button></div><span class="cart-item-price">'+pr(item.p*item.q)+'</span></div>'}).join('');
+document.getElementById('checkout-total').textContent=pr(cart.reduce(function(s,i){return s+i.p*i.q},0));
+}
+function chgQty(id,d){
+var item=cart.find(function(c){return c.id===id});
+if(item){item.q+=d;if(item.q<=0)cart=cart.filter(function(c){return c.id!==id});renderCOItems();updateCart()}
+}
+function submitOrder(){
+if(cart.length===0)return;
+var type=document.getElementById('order-type').value;
+var items=cart.map(function(c){return{name:c.name,p:c.p,q:c.q}});
+var total=cart.reduce(function(s,i){return s+i.p*i.q},0);
+var order={id:oid++,items:items,total:total,status:'open',created:new Date().toISOString(),del:type==='delivery',tid:type==='table'?parseInt(document.getElementById('table-sel').value):null,cn:type==='delivery'?document.getElementById('cust-name').value:null,cp:type==='delivery'?document.getElementById('cust-phone').value:null,da:type==='delivery'?document.getElementById('del-addr').value:null};
+orders.push(order);
+if(type==='table'){var tb=tables.find(function(t){return t.id===order.tid});if(tb){tb.status='occupied';tb.oid=order.id}}
+toast(t('ordercreated'),'success');
+closeModal('m-checkout');
+cart=[];updateCart();
+saveData();
+if(tg&&tg.sendData){var data=JSON.stringify({type:'order',order:order});tg.sendData(data)}
+goPage('dashboard');
+}
+
+// ===== ORDERS =====
+function renderOrders(f){
+f=f||'all';
+var c=document.getElementById('orders-list');
+var list=orders;
+if(f!=='all')list=orders.filter(function(o){return o.status===f});
+if(list.length===0){c.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">'+t('noorders')+'</div></div>';return}
+c.innerHTML=list.reverse().map(function(o){return'<div class="order-card" onclick="showOrder('+o.id+')"><div class="order-info"><div class="order-id">#'+o.id+'</div><div class="order-meta"><span>'+tm(o.created)+'</span><span>•</span><span>'+o.items.length+' поз.</span><span>•</span><span>'+pr(o.total)+'</span></div></div><span class="badge badge-'+o.status+'">'+t(o.status)+'</span></div>'}).join('');
+}
+function showOrders(f){
+document.querySelectorAll('#p-orders .tab').forEach(function(t){t.classList.toggle('active',t.id==='o-'+f)});
+renderOrders(f);
+}
+function showOrder(id){
+var order=orders.find(function(o){return o.id===id});
+if(!order)return;
+document.getElementById('oid-d').textContent=order.id;
+document.getElementById('order-content').innerHTML='<div style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center"><strong style="font-size:18px">#'+order.id+'</strong><span class="badge badge-'+order.status+'">'+t(order.status)+'</span></div></div><div style="border-top:1px solid var(--border);padding-top:12px"><div style="font-weight:600;margin-bottom:8px">'+t('items')+':</div>'+order.items.map(function(i){return'<div style="display:flex;justify-content:space-between;padding:6px 0"><span>'+i.q+'x '+i.name+'</span><span>'+pr(i.p*i.q)+'</span></div>'}).join('')+'</div><div style="border-top:2px solid var(--border);padding-top:12px;margin-top:12px;display:flex;justify-content:space-between;font-size:20px;font-weight:800"><span>'+t('total')+'</span><span style="color:var(--primary)">'+pr(order.total)+'</span></div><div style="margin-top:18px">'+(order.status!=='closed'?'<button class="checkout-btn" style="width:100%" onclick="closeOrd('+order.id+')">'+t('closeorder')+'</button>':'')+'</div>';
+openModal('m-order');
+}
+function closeOrd(id){
+var order=orders.find(function(o){return o.id===id});
+if(order){
+document.getElementById('pay-order-id').textContent=id;
+openModal('m-payment');
+}
+}
+
+function submitPayment(method){
+var id=parseInt(document.getElementById('pay-order-id').textContent);
+var order=orders.find(function(o){return o.id===id});
+if(order){
+order.status='closed';
+order.payment=method;
+if(method==='card')paymentStats.card+=order.total;
+else paymentStats.cash+=order.total;
+if(order.tid){var tb=tables.find(function(t){return t.id===order.tid});if(tb){tb.status='free';tb.oid=null}}
+saveData();
+toast(lang==='ru'?'Заказ закрыт, оплата: '+(method==='card'?'картой':'наличными'):'Zamówienie zamknięte, płatność: '+(method==='card'?'kartą':'gotówką'),'success');
+closeModal('m-payment');closeModal('m-order');goPage('dashboard');
+}
+}
+
+// ===== KITCHEN =====
+function renderKitchen(){
+var ao=orders.filter(function(o){return o.status==='open'||o.status==='cooking'||o.status==='ready'});
+var c=document.getElementById('kitchen-list');
+if(ao.length===0){c.innerHTML='<div class="empty"><div class="empty-icon">👨‍🍳</div><div class="empty-text">'+t('noorders')+'</div></div>';return}
+c.innerHTML=ao.map(function(o){return'<div class="kitchen-card '+(o.status==='ready'?'ready':'')+'"><div class="kh"><div><span class="kh-id">#'+o.id+'</span> <span class="kh-time">'+tm(o.created)+'</span></div><span class="badge badge-'+o.status+'">'+t(o.status)+'</span></div><div>'+o.items.map(function(i){return'<div class="ki"><span class="ki-q">'+i.q+'x</span><span style="color:#000000">'+i.name+'</span></div>'}).join('')+'</div><div class="ka">'+(o.status==='open'?'<button class="checkout-btn" style="flex:1;background:var(--warning);color:#000000;font-size:13px;padding:10px" onclick="updStatus('+o.id+',\'cooking\')">'+t('startcooking')+'</button>':'')+(o.status==='cooking'?'<button class="checkout-btn" style="flex:1;font-size:13px;padding:10px" onclick="updStatus('+o.id+',\'ready\')">'+t('markready')+'</button>':'')+'</div></div>'}).join('');
+}
+function showKitchen(f){
+document.querySelectorAll('#p-kitchen .tab').forEach(function(t){t.classList.toggle('active',t.textContent.trim()===(f==='all'?'Все':f==='open'?'Новые':f==='cooking'?'В работе':'Готовы'))});
+if(f==='all'){renderKitchen();return}
+var ao=orders.filter(function(o){return o.status===f});
+var c=document.getElementById('kitchen-list');
+if(ao.length===0){c.innerHTML='<div class="empty"><div class="empty-icon">👨‍🍳</div><div class="empty-text">'+t('noorders')+'</div></div>';return}
+c.innerHTML=ao.map(function(o){return'<div class="kitchen-card '+(o.status==='ready'?'ready':'')+'"><div class="kh"><div><span class="kh-id">#'+o.id+'</span> <span class="kh-time">'+tm(o.created)+'</span></div><span class="badge badge-'+o.status+'">'+t(o.status)+'</span></div><div>'+o.items.map(function(i){return'<div class="ki"><span class="ki-q">'+i.q+'x</span><span style="color:#000000">'+i.name+'</span></div>'}).join('')+'</div></div>'}).join('');
+}
+function updStatus(id,s){var o=orders.find(function(x){return x.id===id});if(o){o.status=s;renderKitchen();toast('Статус обновлён','success')}}
+
+// ===== INVENTORY =====
+function renderInv(f){
+f=f||'all';
+var c=document.getElementById('inv-list');
+var list=INV;
+if(f==='low')list=INV.filter(function(i){return i.s<=i.m});
+else if(f!=='all')list=INV.filter(function(i){return i.cat===f});
+c.innerHTML=list.map(function(item){var low=item.s<=item.m;return'<div class="inv-card"><div class="inv-name" style="color:#000000">'+tn(item)+'<br><small style="color:#666666">'+pr(item.cost)+'/'+item.u+'</small></div><div style="text-align:right"><span class="inv-stock '+(low?'low':'ok')+'">'+item.s+'</span><span style="font-size:12px;color:var(--muted)">'+item.u+'</span></div></div>'}).join('');
+}
+function showInventory(f){
+document.querySelectorAll('#p-inventory .tab').forEach(function(t){t.classList.toggle('active',t.textContent.trim()===(f==='all'?'Все':f==='low'?'Мало':f==='fish'?'Рыба':'Овощи'))});
+renderInv(f);
+}
+
+// ===== STATS =====
+function renderStats(){
+var closed=orders.filter(function(o){return o.status==='closed'});
+var rev=closed.reduce(function(s,o){return s+o.total},0);
+var cnt=closed.length;
+var avg=cnt>0?rev/cnt:0;
+var iv=INV.reduce(function(s,i){return s+(i.s*i.cost)},0);
+var cardRev=paymentStats.card;
+var cashRev=paymentStats.cash;
+document.getElementById('stats-detail').innerHTML='<div class="stat"><div class="stat-val">'+pr(rev)+'</div><div class="stat-lbl">'+t('revenue')+'</div></div><div class="stat"><div class="stat-val">'+pr(rev)+'</div><div class="stat-lbl">'+t('profit')+'</div></div><div class="stat"><div class="stat-val">'+cnt+'</div><div class="stat-lbl">'+t('totalorders')+'</div></div><div class="stat"><div class="stat-val">'+pr(avg)+'</div><div class="stat-lbl">'+t('avgcheck')+'</div></div><div class="stat"><div class="stat-val">'+pr(iv)+'</div><div class="stat-lbl">'+t('stockvalue')+'</div></div><div class="stat"><div class="stat-val" style="color:#4CAF50">'+pr(cardRev)+'</div><div class="stat-lbl">'+t('cardrev')+'</div></div><div class="stat"><div class="stat-val" style="color:#ff9800">'+pr(cashRev)+'</div><div class="stat-lbl">'+t('cashrev')+'</div></div>';
+var sales={};
+orders.forEach(function(o){o.items.forEach(function(i){if(!sales[i.name])sales[i.name]={q:0,r:0};sales[i.name].q+=i.q;sales[i.name].r+=i.p*i.q})});
+var pop=Object.entries(sales).map(function(e){return{name:e[0],q:e[1].q,r:e[1].r}}).sort(function(a,b){return b.q-a.q}).slice(0,5);
+document.getElementById('popular-list').innerHTML=pop.length===0?'<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">'+t('noorders')+'</div></div>':pop.map(function(item,i){return'<div class="inv-card"><div class="inv-name" style="color:#000000">'+(i+1)+'. '+item.name+'<br><small style="color:#666666">'+item.q+' '+t('sold')+'</small></div><div style="font-size:16px;font-weight:800;color:var(--primary)">'+pr(item.r)+'</div></div>'}).join('');
+}
+
+// ===== MODALS =====
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.modal-overlay').forEach(function(ov){ov.addEventListener('click',function(e){if(e.target===this){this.classList.remove('open')}})});
+
+// ===== MENU EDITOR =====
+function renderMenuEditor(cat){
+cat=cat||'all';
+var cats=[];
+for(var i=0;i<MENU.length;i++){if(cats.indexOf(MENU[i].c)===-1)cats.push(MENU[i].c)}
+document.getElementById('editor-tabs').innerHTML='<button class="tab '+(cat==='all'?'active':'')+'" onclick="renderMenuEditor(\'all\')">'+t('all')+'</button>'+cats.map(function(c){return'<button class="tab '+(cat===c?'active':'')+'" onclick="renderMenuEditor(\''+c+'\')">'+t('cat_'+c)+'</button>'}).join('');
+var items=cat==='all'?MENU:MENU.filter(function(m){return m.c===cat});
+document.getElementById('editor-grid').innerHTML=items.map(function(item){return'<div class="menu-item" style="cursor:default" ondblclick="editMenuItem('+item.id+')"><span class="menu-emoji">'+item.e+'</span><div class="menu-name">'+tn(item)+'</div><div class="menu-desc">'+(lang==='pl'?item.dp:item.dr)+'</div><div class="menu-footer"><span class="menu-price">'+pr(item.p)+'</span><button class="add-btn" style="background:var(--warning);color:#000000;font-size:16px" onclick="editMenuItem('+item.id+')">✏️</button></div></div>'}).join('');
+}
+
+function editMenuItem(id){
+var item=MENU.find(function(m){return m.id===id});
+if(!item)return;
+document.getElementById('edit-item-id').value=id;
+document.getElementById('edit-nr').value=item.nr;
+document.getElementById('edit-np').value=item.np;
+document.getElementById('edit-p').value=item.p;
+document.getElementById('edit-dr').value=item.dr;
+document.getElementById('edit-dp').value=item.dp;
+document.getElementById('edit-c').value=item.c;
+openModal('m-edit-item');
+}
+
+function saveEditItem(){
+var id=parseInt(document.getElementById('edit-item-id').value);
+var item=MENU.find(function(m){return m.id===id});
+if(item){
+item.nr=document.getElementById('edit-nr').value;
+item.np=document.getElementById('edit-np').value;
+item.p=parseFloat(document.getElementById('edit-p').value);
+item.dr=document.getElementById('edit-dr').value;
+item.dp=document.getElementById('edit-dp').value;
+item.c=document.getElementById('edit-c').value;
+toast(lang==='ru'?'Блюдо сохранено':'Danie zapisane','success');
+closeModal('m-edit-item');
+renderMenuEditor(curCat);
+saveData();
+}
+}
+
+function deleteEditItem(){
+var id=parseInt(document.getElementById('edit-item-id').value);
+if(confirm(lang==='ru'?'Удалить это блюдо?':'Usunąć to danie?')){
+MENU=MENU.filter(function(m){return m.id!==id});
+toast(lang==='ru'?'Блюдо удалено':'Danie usunięte','success');
+closeModal('m-edit-item');
+renderMenuEditor(curCat);
+saveData();
+}
+}
+
+function openAddItemModal(){
+document.getElementById('edit-item-id').value='new';
+document.getElementById('edit-nr').value='';
+document.getElementById('edit-np').value='';
+document.getElementById('edit-p').value='';
+document.getElementById('edit-dr').value='';
+document.getElementById('edit-dp').value='';
+document.getElementById('edit-c').value='sets';
+openModal('m-edit-item');
+}
+
+function saveMenuChanges(){
+toast(lang==='ru'?'Изменения сохранены!':'Zmiany zapisane!','success');
+renderMenu();
+saveData();
+}
+
+// ===== INIT =====
+setLang('ru');
+checkAutoLogin();
+setInterval(function(){renderDash();saveData()},30000);
+
+// Update payment translations
+function updatePaymentUI(){
+document.getElementById('t-card').textContent=t('card');
+document.getElementById('t-cash').textContent=t('cash');
+document.getElementById('t-payment-title').textContent=t('payment');
+document.getElementById('t-payment-desc').innerHTML=(lang==='ru'?'Выберите способ оплаты для заказа #':'Wybierz metodę płatności dla zamówienia #')+'<span id="pay-order-id"></span>';
+}
+
+// Override setLang to include payment UI
+var origSetLang=setLang;
+setLang=function(l){
+origSetLang(l);
+updatePaymentUI();
+};
+
+// Main Button for Telegram
+tg.MainButton.setText("Оформить заказ");
+tg.MainButton.onClick(function(){
+if(cart.length>0){
+openCheckout();
+}
+});
+</script>
+</body>
+</html>

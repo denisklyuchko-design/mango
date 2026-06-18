@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0a0a">
+<title>Mango Sushi Wok POS - Terminal</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+--bg:#0a0a0a;--card:#1a1a2e;--card2:#222240;
+--primary:#ff6b35;--primary2:#ff8c5a;--secondary:#00d9ff;
+--text:#ffffff;--text2:#f0f0f0;--muted:#b0b8d0;
+--success:#00ff88;--warning:#ffcc00;--danger:#ff4444;
+--border:#3a3a5a;--radius:16px;--radius-sm:12px;
+--shadow:0 4px 20px rgba(0,0,0,0.4);
+--transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:160px;overflow-x:hidden}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+.header{background:linear-gradient(135deg,#ff6b35,#ff8c5a);padding:16px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 15px rgba(255,107,53,0.3)}
+.header-content{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{font-size:36px;animation:bounce 2s infinite}
+.logo h1{font-size:20px;font-weight:800;color:#ffffff;text-shadow:0 2px 4px rgba(0,0,0,0.2)}
+.logo p{font-size:11px;color:rgba(255,255,255,0.9);margin-top:2px}
+.user-info{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.2);padding:6px 12px;border-radius:12px;font-size:12px;backdrop-filter:blur(10px)}
+.user-role{padding:2px 8px;background:var(--secondary);border-radius:8px;font-weight:600;font-size:10px;color:#000}
+.lang-switch{display:flex;gap:4px;background:rgba(255,255,255,0.2);padding:4px;border-radius:12px;backdrop-filter:blur(10px)}
+.lang-btn{padding:6px 12px;border:none;background:transparent;color:#ffffff;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:var(--transition)}
+.lang-btn.active{background:#ffffff;color:#ff6b35;box-shadow:0 2px 8px rgba(255,255,255,0.3)}
+
+.container{max-width:1200px;margin:0 auto;padding:16px;animation:slideUp 0.4s}
+
+.order-type-selector{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.order-type-btn{padding:24px;background:var(--card);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:var(--transition);text-align:center;position:relative;overflow:hidden}
+.order-type-btn::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,transparent,rgba(255,107,53,0.05));opacity:0;transition:var(--transition)}
+.order-type-btn:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:0 8px 25px rgba(255,107,53,0.2)}
+.order-type-btn:hover::before{opacity:1}
+.order-type-btn.active{border-color:var(--primary);background:rgba(255,107,53,0.1);box-shadow:0 0 30px rgba(255,107,53,0.15)}
+.order-type-icon{font-size:48px;margin-bottom:12px;display:block;position:relative;z-index:1}
+.order-type-label{font-size:18px;font-weight:700;margin-bottom:6px;position:relative;z-index:1}
+.order-type-desc{font-size:12px;color:var(--muted);position:relative;z-index:1}
+
+.time-selector{margin-bottom:24px;background:var(--card);padding:20px;border-radius:var(--radius);border:1px solid var(--border)}
+.time-selector h3{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.time-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.time-btn{padding:14px;background:var(--card2);border:2px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);font-size:13px;font-weight:600;text-align:center;color:var(--text2)}
+.time-btn:hover{border-color:var(--primary);background:rgba(255,107,53,0.05)}
+.time-btn.active{border-color:var(--primary);background:rgba(255,107,53,0.15);color:var(--primary);box-shadow:0 0 15px rgba(255,107,53,0.2)}
+
+.category-tabs{display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;scrollbar-color:var(--primary) var(--card)}
+.category-tabs::-webkit-scrollbar{height:6px}
+.category-tabs::-webkit-scrollbar-track{background:var(--card)}
+.category-tabs::-webkit-scrollbar-thumb{background:var(--primary);border-radius:3px}
+.category-tab{padding:10px 20px;background:var(--card);border:2px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);font-size:13px;font-weight:600;white-space:nowrap;color:var(--text2);display:flex;align-items:center;gap:6px}
+.category-tab:hover{border-color:var(--primary);color:var(--text)}
+.category-tab.active{background:linear-gradient(135deg,var(--primary),var(--primary2));border-color:var(--primary);color:#ffffff;box-shadow:0 4px 15px rgba(255,107,53,0.3)}
+
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-bottom:24px}
+.menu-item{background:var(--card);border:2px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:var(--transition);position:relative;overflow:hidden}
+.menu-item::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--secondary));transform:scaleX(0);transition:transform 0.3s}
+.menu-item:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:0 8px 25px rgba(255,107,53,0.15)}
+.menu-item:hover::after{transform:scaleX(1)}
+.menu-item:active{transform:scale(0.98)}
+.menu-emoji{font-size:48px;margin-bottom:10px;display:block;text-align:center}
+.menu-name{font-size:14px;font-weight:700;margin-bottom:4px;line-height:1.3;text-align:center}
+.menu-weight{font-size:11px;color:var(--muted);margin-bottom:10px;text-align:center}
+.menu-footer{display:flex;justify-content:space-between;align-items:center}
+.menu-price{font-size:18px;font-weight:800;color:var(--primary)}
+.add-btn{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary2));border:none;color:#ffffff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--transition);box-shadow:0 2px 10px rgba(255,107,53,0.3)}
+.add-btn:hover{transform:scale(1.15) rotate(90deg);box-shadow:0 4px 15px rgba(255,107,53,0.5)}
+
+.cart-bar{position:fixed;bottom:80px;left:16px;right:16px;max-width:1168px;margin:0 auto;background:linear-gradient(135deg,var(--card),var(--card2));border:2px solid var(--primary);border-radius:var(--radius);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;z-index:90;transform:translateY(150%);transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);box-shadow:0 4px 30px rgba(255,107,53,0.3);backdrop-filter:blur(10px)}
+.cart-bar.show{transform:translateY(0)}
+.cart-info{display:flex;align-items:center;gap:14px}
+.cart-count{width:36px;height:36px;background:linear-gradient(135deg,var(--primary),var(--primary2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#ffffff;animation:pulse 1.5s infinite;box-shadow:0 2px 10px rgba(255,107,53,0.5)}
+.cart-total{font-size:20px;font-weight:800;color:var(--primary)}
+.checkout-btn{padding:12px 24px;background:linear-gradient(135deg,var(--primary),var(--primary2));border:none;border-radius:12px;color:#ffffff;font-size:15px;font-weight:700;cursor:pointer;transition:var(--transition);box-shadow:0 4px 15px rgba(255,107,53,0.4)}
+.checkout-btn:hover{transform:scale(1.05);box-shadow:0 6px 20px rgba(255,107,53,0.5)}
+
+.delivery-form{margin-top:20px;padding:24px;background:var(--card);border-radius:var(--radius);border:1px solid var(--border);box-shadow:var(--shadow)}
+.delivery-form h3{font-size:18px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+.form-group input,.form-group textarea{width:100%;padding:16px;background:var(--card2);border:2px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:16px;font-weight:500;transition:var(--transition)}
+.form-group input:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 15px rgba(255,107,53,0.2)}
+.form-group textarea{min-height:100px;resize:vertical}
+.form-group input::placeholder,.form-group textarea::placeholder{color:var(--muted);opacity:0.6}
+
+.payment-selector{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:20px 0}
+.payment-btn{padding:20px;background:var(--card);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:var(--transition);text-align:center}
+.payment-btn:hover{border-color:var(--primary);transform:translateY(-2px)}
+.payment-btn.active{border-color:var(--success);background:rgba(0,255,136,0.1);box-shadow:0 0 20px rgba(0,255,136,0.2)}
+.payment-icon{font-size:36px;margin-bottom:10px}
+.payment-label{font-size:15px;font-weight:700}
+
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,var(--card),var(--card2));border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0;z-index:100;padding-bottom:max(8px,env(safe-area-inset-bottom));backdrop-filter:blur(10px);box-shadow:0 -2px 20px rgba(0,0,0,0.3)}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 12px;border:none;background:none;color:var(--muted);font-size:11px;cursor:pointer;flex:1;transition:var(--transition);position:relative}
+.nav-icon{font-size:26px;transition:var(--transition)}
+.nav-btn.active{color:var(--primary)}
+.nav-btn.active .nav-icon{animation:pulse 0.5s}
+.nav-btn::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:3px;background:var(--primary);border-radius:3px 3px 0 0;transition:width 0.3s}
+.nav-btn.active::after{width:60%}
+
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;visibility:hidden;transition:all 0.3s;backdrop-filter:blur(5px)}
+.modal-overlay.open{opacity:1;visibility:visible}
+.modal{background:var(--card);border-radius:var(--radius);width:90%;max-width:550px;max-height:85vh;overflow-y:auto;padding:28px;transform:scale(0.9) translateY(20px);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);box-shadow:0 20px 60px rgba(0,0,0,0.5);border:1px solid var(--border)}
+.modal-overlay.open .modal{transform:scale(1) translateY(0)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.modal-title{font-size:22px;font-weight:700;color:var(--primary)}
+.modal-close{width:40px;height:40px;border-radius:50%;background:var(--border);border:none;color:#ffffff;font-size:20px;cursor:pointer;transition:var(--transition);display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--danger);transform:rotate(90deg) scale(1.1)}
+
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;text-align:center;transition:var(--transition)}
+.stat-card:hover{transform:translateY(-4px);box-shadow:0 8px 25px rgba(255,107,53,0.15)}
+.stat-value{font-size:32px;font-weight:800;color:var(--primary);margin-bottom:6px;background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+
+.orders-list{display:flex;flex-direction:column;gap:16px}
+.order-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;transition:var(--transition)}
+.order-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.2)}
+.order-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.order-id{font-size:15px;font-weight:700;color:var(--primary)}
+.order-time{font-size:11px;color:var(--muted);margin-top:4px}
+.order-status{padding:6px 12px;border-radius:10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.order-status.new{background:rgba(0,217,255,0.15);color:var(--secondary);border:1px solid rgba(0,217,255,0.3)}
+.order-status.cooking{background:rgba(255,204,0,0.15);color:var(--warning);border:1px solid rgba(255,204,0,0.3)}
+.order-status.ready{background:rgba(0,255,136,0.15);color:var(--success);border:1px solid rgba(0,255,136,0.3)}
+.order-status.completed{background:rgba(255,107,53,0.15);color:var(--primary);border:1px solid rgba(255,107,53,0.3)}
+.order-items{font-size:13px;color:var(--text2);margin-bottom:10px;line-height:1.6;padding:12px;background:var(--card2);border-radius:var(--radius-sm)}
+.order-total{font-size:18px;font-weight:700;color:var(--primary);margin-bottom:10px}
+.order-meta{font-size:11px;color:var(--muted);display:flex;gap:16px;flex-wrap:wrap}
+.order-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.action-btn{padding:10px 18px;border:none;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;transition:var(--transition);display:flex;align-items:center;gap:6px}
+.action-btn.print{background:var(--secondary);color:#000}
+.action-btn.complete{background:var(--success);color:#000}
+.action-btn.delete{background:var(--danger);color:#fff}
+.action-btn:hover{transform:scale(1.05);box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+
+.toast{position:fixed;top:20px;right:20px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:18px 24px;z-index:300;transform:translateX(400px);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);box-shadow:var(--shadow);max-width:350px}
+.toast.show{transform:translateX(0)}
+.toast.success{border-color:var(--success);background:linear-gradient(135deg,var(--card),rgba(0,255,136,0.1))}
+.toast.error{border-color:var(--danger);background:linear-gradient(135deg,var(--card),rgba(255,68,68,0.1))}
+
+.section-title{font-size:20px;font-weight:700;margin-bottom:20px;color:var(--text);display:flex;align-items:center;gap:10px}
+
+.cart-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+.cart-item:last-child{border-bottom:none}
+.cart-item-info{display:flex;align-items:center;gap:12px}
+.cart-item-emoji{font-size:28px}
+.cart-item-name{font-weight:600}
+.cart-item-qty{display:flex;align-items:center;gap:8px;margin-left:auto}
+.qty-btn{width:28px;height:28px;border-radius:8px;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:16px;cursor:pointer;transition:var(--transition);display:flex;align-items:center;justify-content:center}
+.qty-btn:hover{background:var(--primary);border-color:var(--primary)}
+.cart-item-price{font-weight:700;color:var(--primary);min-width:70px;text-align:right}
+
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state-icon{font-size:64px;margin-bottom:16px;opacity:0.5}
+.empty-state-text{font-size:16px;font-weight:600;margin-bottom:8px}
+.empty-state-desc{font-size:13px}
+
+@media(max-width:768px){
+.order-type-selector{grid-template-columns:1fr}
+.menu-grid{grid-template-columns:repeat(2,1fr)}
+.stats-grid{grid-template-columns:1fr}
+.payment-selector{grid-template-columns:1fr}
+.time-options{grid-template-columns:repeat(2,1fr)}
+}
+
+@media(max-width:480px){
+.menu-grid{grid-template-columns:1fr}
+.logo h1{font-size:16px}
+.header-content{padding:0 10px}
+}
+
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--primary)}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+<div class="header-content">
+<div class="logo">
+<span class="logo-icon">🍱</span>
+<div>
+<h1>Mango Sushi Wok</h1>
+<p id="headerSubtitle">System POS</p>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:12px">
+<div class="user-info">
+<span id="userName">Kasjer</span>
+<span class="user-role" id="userRole">KASJER</span>
+</div>
+<div class="lang-switch">
+<button class="lang-btn" onclick="setLanguage('pl')" id="langPL">PL</button>
+<button class="lang-btn active" onclick="setLanguage('ru')" id="langRU">RU</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Main Container -->
+<div class="container" id="app">
+<!-- Content will be rendered here -->
+</div>
+
+<!-- Cart Bar -->
+<div class="cart-bar" id="cartBar">
+<div class="cart-info">
+<div class="cart-count" id="cartCount">0</div>
+<div class="cart-total" id="cartTotal">0 zł</div>
+</div>
+<button class="checkout-btn" onclick="showCheckout()" id="checkoutBtn">Zamów</button>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+<button class="nav-btn active" onclick="showPage('new-order')" id="nav-new-order">
+<span class="nav-icon">📝</span>
+<span id="nav-new-order-text">Nowe zamówienie</span>
+</button>
+<button class="nav-btn" onclick="showPage('orders')" id="nav-orders">
+<span class="nav-icon">📋</span>
+<span id="nav-orders-text">Zamówienia</span>
+</button>
+<button class="nav-btn" onclick="showPage('statistics')" id="nav-statistics">
+<span class="nav-icon">📊</span>
+<span id="nav-statistics-text">Statystyki</span>
+</button>
+<button class="nav-btn" onclick="showPage('menu')" id="nav-menu">
+<span class="nav-icon">🍱</span>
+<span id="nav-menu-text">Menu</span>
+</button>
+<button class="nav-btn" onclick="showPage('admin')" id="nav-admin">
+<span class="nav-icon">⚙️</span>
+<span id="nav-admin-text">Admin</span>
+</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Checkout Modal -->
+<div class="modal-overlay" id="checkoutModal">
+<div class="modal">
+<div class="modal-head">
+<h2 class="modal-title" id="checkoutTitle">Składanie zamówienia</h2>
+<button class="modal-close" onclick="closeModal('checkoutModal')">✕</button>
+</div>
+<div id="checkoutContent"></div>
+</div>
+</div>
+
+<script>
+// ==================== TRANSLATIONS ====================
+const TRANSLATIONS = {
+pl: {
+headerTitle: "Mango Sushi Wok",
+headerSubtitle: "System POS",
+cashier: "Kasjer",
+admin: "ADMIN",
+newOrder: "Nowe zamówienie",
+orders: "Zamówienia",
+statistics: "Statystyki",
+menu: "Menu",
+dineIn: "Na miejscu",
+dineInDesc: "Zamówienie na sali",
+delivery: "Dostawa",
+deliveryDesc: "Zamówienie z dostawą",
+timeTitle: "⏰ Czas realizacji",
+timeSlots: ["Jak najszybciej","Za 30 minut","Za 1 godzinę","Za 1.5 godziny","Za 2 godziny","Na określoną godzinę"],
+categories: {all: "Wszystko",rolls: "Sushi/Rolki",nigiri: "Nigiri",sets: "Zestawy",wok: "Wok",soups: "Zupy",drinks: "Napoje",desserts: "Desery"},
+deliveryTitle: "📍 Dane dostawy",
+phoneLabel: "📞 Numer telefonu",
+phonePlaceholder: "+48 XXX XXX XXX",
+addressLabel: "🏠 Adres dostawy",
+addressPlaceholder: "Ulica, dom, mieszkanie",
+noteLabel: "📝 Uwagi",
+notePlaceholder: "Domofon, piętro, komentarze...",
+checkout: "Zamów",
+cartEmpty: "Koszyk jest pusty",
+orderSummary: "📋 Skład zamówienia",
+total: "Razem:",
+paymentTitle: "💳 Sposób płatności",
+cash: "Gotówka",
+card: "Karta",
+confirmOrder: "✅ Potwierdź zamówienie",
+orderCreated: "Zamówienie utworzone!",
+addToCart: "Dodano do zamówienia",
+orderStatus: {new: "Nowe",cooking: "W przygotowaniu",ready: "Gotowe",completed: "Wydane"},
+print: "🖨 Drukuj",
+cooking: "👨‍🍳 Do przygotowania",
+ready: "✅ Gotowe",
+completed: "🎉 Wydane",
+delete: "🗑 Usuń",
+reprint: "🖨 Drukuj",
+statsTitle: "📊 Statystyki",
+totalOrders: "Wszystkie zamówienia",
+totalRevenue: "Całkowity przychód",
+todayOrders: "Dzisiaj",
+todayRevenue: "Przychód dzisiaj",
+popularItems: "🔥 Popularne dania",
+noOrders: "Brak zamówień",
+adminOnly: "Tylko administrator może usuwać zamówienia",
+statusUpdated: "Status zaktualizowany",
+orderDeleted: "Zamówienie usunięte",
+receiptTitle: "PARAGON WYSŁANY DO DRUKU!",
+receiptHeader: "MANGO SUSHI WOK",
+receiptType: {table: "Na miejscu",delivery: "Dostawa"},
+receiptPayment: {cash: "Gotówka",card: "Karta"},
+emptyOrders: "Brak zamówień do wyświetlenia",
+emptyCart: "Twój koszyk jest pusty",
+startOrder: "Rozpocznij nowe zamówienie",
+removeItem: "Usuń",
+quantity: "Ilość"
+},
+ru: {
+headerTitle: "Mango Sushi Wok",
+headerSubtitle: "POS Система",
+cashier: "Кассир",
+admin: "АДМИН",
+newOrder: "Новый заказ",
+orders: "Заказы",
+statistics: "Статистика",
+menu: "Меню",
+dineIn: "На месте",
+dineInDesc: "Заказ для зала",
+delivery: "Доставка",
+deliveryDesc: "Заказ с доставкой",
+timeTitle: "⏰ Время выполнения",
+timeSlots: ["Как можно скорее","Через 30 минут","Через 1 час","Через 1.5 часа","Через 2 часа","К определенному времени"],
+categories: {all: "Все",rolls: "Роллы",nigiri: "Nigiri",sets: "Сеты",wok: "Вок",soups: "Супы",drinks: "Напитки",desserts: "Десерты"},
+deliveryTitle: "📍 Данные доставки",
+phoneLabel: "📞 Номер телефона",
+phonePlaceholder: "+48 XXX XXX XXX",
+addressLabel: "🏠 Адрес доставки",
+addressPlaceholder: "Улица, дом, квартира",
+noteLabel: "📝 Примечание",
+notePlaceholder: "Домофон, этаж, комментарии...",
+checkout: "Оформить",
+cartEmpty: "Корзина пуста",
+orderSummary: "📋 Состав заказа",
+total: "Итого:",
+paymentTitle: "💳 Способ оплаты",
+cash: "Наличные",
+card: "Карта",
+confirmOrder: "✅ Подтвердить заказ",
+orderCreated: "Заказ успешно создан!",
+addToCart: "Добавлено в заказ",
+orderStatus: {new: "Новый",cooking: "Готовится",ready: "Готов",completed: "Выдан"},
+print: "🖨 Печать",
+cooking: "👨‍🍳 Готовится",
+ready: "✅ Готов",
+completed: "🎉 Выдан",
+delete: "🗑 Удалить",
+reprint: "🖨 Печать",
+statsTitle: "📊 Статистика",
+totalOrders: "Всего заказов",
+totalRevenue: "Общая выручка",
+todayOrders: "За сегодня",
+todayRevenue: "Выручка сегодня",
+popularItems: "🔥 Популярные блюда",
+noOrders: "Заказов пока нет",
+adminOnly: "Только администратор может удалять заказы",
+statusUpdated: "Статус обновлен",
+orderDeleted: "Заказ удален",
+receiptTitle: "ЧЕК ОТПРАВЛЕН НА PЕЧАТЬ!",
+receiptHeader: "MANGO SUSHI WOK",
+receiptType: {table: "На месте",delivery: "Доставка"},
+receiptPayment: {cash: "Наличные",card: "Карта"},
+emptyOrders: "Заказов для отображения нет",
+emptyCart: "Ваша корзина пуста",
+startOrder: "Начните новый заказ",
+removeItem: "Удалить",
+quantity: "Количество"
+}
+};
+
+let currentLang = localStorage.getItem('mango_lang') || 'pl';
+
+function t(key) {
+const keys = key.split('.');
+let value = TRANSLATIONS[currentLang];
+for (const k of keys) {
+if (value && value[k] !== undefined) {
+value = value[k];
+} else {
+return key;
+}
+}
+return value;
+}
+
+function setLanguage(lang) {
+currentLang = lang;
+localStorage.setItem('mango_lang', lang);
+document.getElementById('langPL').classList.toggle('active', lang === 'pl');
+document.getElementById('langRU').classList.toggle('active', lang === 'ru');
+updateNavigation();
+renderPage();
+}
+
+function updateNavigation() {
+document.getElementById('nav-new-order-text').textContent = t('newOrder');
+document.getElementById('nav-orders-text').textContent = t('orders');
+document.getElementById('nav-statistics-text').textContent = t('statistics');
+document.getElementById('nav-menu-text').textContent = t('menu');
+document.getElementById('headerSubtitle').textContent = t('headerSubtitle');
+document.getElementById('userRole').textContent = state.userRole === 'admin' ? t('admin') : t('cashier');
+document.getElementById('checkoutBtn').textContent = t('checkout');
+document.getElementById('checkoutTitle').textContent = t('orderSummary');
+}
+
+// ==================== DATA ====================
+const MENU = [
+{ id: 1, name: { pl: "Filadelfia Lux", ru: "Филадельфия Люкс" }, emoji: "🍣", price: 28, weight: "300g", category: "rolls" },
+{ id: 2, name: { pl: "Kalifornia", ru: "Калифорния" }, emoji: "🍣", price: 22, weight: "280g", category: "rolls" },
+{ id: 3, name: { pl: "Smok", ru: "Дракон" }, emoji: "🍣", price: 26, weight: "320g", category: "rolls" },
+{ id: 4, name: { pl: "Maki z łososiem", ru: "Маки с лососем" }, emoji: "🍣", price: 16, weight: "120g", category: "rolls" },
+{ id: 5, name: { pl: "Maki z ogórkiem", ru: "Маки с огурцом" }, emoji: "🍣", price: 12, weight: "110g", category: "rolls" },
+{ id: 6, name: { pl: "Nigiri z łososiem", ru: "Nigiri с лососем" }, emoji: "🍣", price: 18, weight: "80g", category: "nigiri" },
+{ id: 7, name: { pl: "Nigiri z tuńczykiem", ru: "Nigiri с тунцом" }, emoji: "🍣", price: 20, weight: "80g", category: "nigiri" },
+{ id: 8, name: { pl: "Zestaw Premium", ru: "Сет Премиум" }, emoji: "🎁", price: 120, weight: "1200g", category: "sets" },
+{ id: 9, name: { pl: "Zestaw dla dwojga", ru: "Сет для двоих" }, emoji: "🎁", price: 80, weight: "800g", category: "sets" },
+{ id: 10, name: { pl: "Impreza", ru: "Вечеринка" }, emoji: "🎁", price: 150, weight: "1500g", category: "sets" },
+{ id: 11, name: { pl: "Ramen z kurczakiem", ru: "Рамен с курицей" }, emoji: "🍜", price: 26, weight: "450g", category: "wok" },
+{ id: 12, name: { pl: "Udon z owocami morza", ru: "Удон с морепродуктами" }, emoji: "🍜", price: 28, weight: "400g", category: "wok" },
+{ id: 13, name: { pl: "Yakitori", ru: "Якитори" }, emoji: "🍢", price: 22, weight: "200g", category: "wok" },
+{ id: 14, name: { pl: "Tom Yam", ru: "Том Ям" }, emoji: "🍲", price: 28, weight: "400g", category: "soups" },
+{ id: 15, name: { pl: "Zupa Miso", ru: "Мисо суп" }, emoji: "🍲", price: 18, weight: "300g", category: "soups" },
+{ id: 16, name: { pl: "Zielona herbata", ru: "Зеленый чай" }, emoji: "🍵", price: 8, weight: "300ml", category: "drinks" },
+{ id: 17, name: { pl: "Sake", ru: "Саке" }, emoji: "🍶", price: 24, weight: "300ml", category: "drinks" },
+{ id: 18, name: { pl: "Piwo Asahi", ru: "Пиво Asahi" }, emoji: "🍺", price: 16, weight: "500ml", category: "drinks" },
+{ id: 19, name: { pl: "Mochi mix", ru: "Моти микс" }, emoji: "🍡", price: 18, weight: "150g", category: "desserts" },
+{ id: 20, name: { pl: "Lody", ru: "Мороженое" }, emoji: "🍨", price: 14, weight: "120g", category: "desserts" }
+];
+
+function getItemName(item) {
+if (typeof item.name === 'object') {
+return item.name[currentLang] || item.name.pl;
+}
+return item.name;
+}
+
+const CATEGORIES = [
+{ id: "all", name: { pl: "Wszystko", ru: "Все" }, emoji: "🍱" },
+{ id: "rolls", name: { pl: "Sushi/Rolki", ru: "Роллы" }, emoji: "🍣" },
+{ id: "nigiri", name: { pl: "Nigiri", ru: "Nigiri" }, emoji: "🍣" },
+{ id: "sets", name: { pl: "Zestawy", ru: "Сеты" }, emoji: "🎁" },
+{ id: "wok", name: { pl: "Wok", ru: "Вок" }, emoji: "🍜" },
+{ id: "soups", name: { pl: "Zupy", ru: "Супы" }, emoji: "🍲" },
+{ id: "drinks", name: { pl: "Napoje", ru: "Напитки" }, emoji: "🍵" },
+{ id: "desserts", name: { pl: "Desery", ru: "Десерты" }, emoji: "🍡" }
+];
+
+function getCategoryName(cat) {
+if (typeof cat.name === 'object') {
+return cat.name[currentLang] || cat.name.pl;
+}
+return cat.name;
+}
+
+function getTimeSlots() {
+return t('timeSlots');
+}
+
+// ==================== STATE ====================
+let state = {
+currentPage: 'new-order',
+cart: [],
+orders: JSON.parse(localStorage.getItem('orders') || '[]'),
+menu: JSON.parse(localStorage.getItem('menu')) || JSON.parse(JSON.stringify(MENU)),
+currentCategory: 'all',
+orderType: 'table',
+selectedTime: getTimeSlots()[0],
+paymentMethod: 'cash',
+userRole: 'cashier',
+userName: 'Kasjer',
+deliveryInfo: { address: '', phone: '', note: '' },
+editingItem: null
+};
+
+// ==================== INITIALIZATION ====================
+function init() {
+if (window.Telegram && window.Telegram.WebApp) {
+const user = window.Telegram.WebApp.initDataUnsafe?.user;
+if (user) {
+state.userName = user.first_name + ' ' + (user.last_name || '');
+const adminIds = [123456789];
+if (adminIds.includes(user.id)) {
+state.userRole = 'admin';
+}
+}
+document.getElementById('userName').textContent = state.userName || t('cashier');
+document.getElementById('userRole').textContent = state.userRole === 'admin' ? t('admin') : t('cashier');
+}
+updateNavigation();
+renderPage();
+}
+
+// ==================== NAVIGATION ====================
+function showPage(page) {
+state.currentPage = page;
+document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+event.currentTarget.classList.add('active');
+renderPage();
+}
+
+function renderPage() {
+const app = document.getElementById('app');
+const cartBar = document.getElementById('cartBar');
+
+switch(state.currentPage) {
+case 'new-order':
+cartBar.style.display = 'flex';
+renderNewOrder(app);
+break;
+case 'orders':
+cartBar.style.display = 'none';
+renderOrders(app);
+break;
+case 'statistics':
+cartBar.style.display = 'none';
+renderStatistics(app);
+break;
+case 'menu':
+cartBar.style.display = 'flex';
+renderMenuPage(app);
+break;
+case 'admin':
+cartBar.style.display = 'none';
+showAdminPage(app);
+break;
+}
+}
+
+// ==================== NEW ORDER ====================
+function renderNewOrder(container) {
+container.innerHTML = `
+<div class="order-type-selector">
+<div class="order-type-btn ${state.orderType === 'table' ? 'active' : ''}" onclick="setOrderType('table')">
+<div class="order-type-icon">🏠</div>
+<div class="order-type-label">${t('dineIn')}</div>
+<div class="order-type-desc">${t('dineInDesc')}</div>
+</div>
+<div class="order-type-btn ${state.orderType === 'delivery' ? 'active' : ''}" onclick="setOrderType('delivery')">
+<div class="order-type-icon">🚚</div>
+<div class="order-type-label">${t('delivery')}</div>
+<div class="order-type-desc">${t('deliveryDesc')}</div>
+</div>
+</div>
+
+<div class="time-selector">
+<h3>${t('timeTitle')}</h3>
+<div class="time-options">
+${getTimeSlots().map((time, idx) => `
+<div class="time-btn ${state.selectedTime === getTimeSlots()[idx] ? 'active' : ''}" onclick="setTime(${idx})">${time}</div>
+`).join('')}
+</div>
+</div>
+
+<div class="category-tabs" id="categoryTabs"></div>
+<div class="menu-grid" id="menuGrid"></div>
+
+${state.orderType === 'delivery' ? `
+<div class="delivery-form">
+<h3>${t('deliveryTitle')}</h3>
+<div class="form-group">
+<label>${t('phoneLabel')}</label>
+<input type="tel" placeholder="${t('phonePlaceholder')}" value="${state.deliveryInfo.phone}" oninput="updateDeliveryInfo('phone', this.value)">
+</div>
+<div class="form-group">
+<label>${t('addressLabel')}</label>
+<input type="text" placeholder="${t('addressPlaceholder')}" value="${state.deliveryInfo.address}" oninput="updateDeliveryInfo('address', this.value)">
+</div>
+<div class="form-group">
+<label>${t('noteLabel')}</label>
+<textarea placeholder="${t('notePlaceholder')}" oninput="updateDeliveryInfo('note', this.value)">${state.deliveryInfo.note}</textarea>
+</div>
+</div>
+` : ''}
+`;
+
+renderCategories();
+renderMenuItems();
+}
+
+function setOrderType(type) { state.orderType = type; renderPage(); }
+function setTime(idx) { state.selectedTime = getTimeSlots()[idx]; renderPage(); }
+function setCategory(catId) { state.currentCategory = catId; renderCategories(); renderMenuItems(); }
+
+function renderCategories() {
+const tabs = document.getElementById('categoryTabs');
+if (!tabs) return;
+tabs.innerHTML = CATEGORIES.map(cat => `
+<div class="category-tab ${state.currentCategory === cat.id ? 'active' : ''}" onclick="setCategory('${cat.id}')">${cat.emoji} ${getCategoryName(cat)}</div>
+`).join('');
+}
+
+function renderMenuItems() {
+const grid = document.getElementById('menuGrid');
+if (!grid) return;
+const filtered = state.currentCategory === 'all' ? state.menu : state.menu.filter(item => item.category === state.currentCategory);
+grid.innerHTML = filtered.map(item => `
+<div class="menu-item" onclick="addToCart(${item.id})">
+<span class="menu-emoji">${item.emoji}</span>
+<div class="menu-name">${getItemName(item)}</div>
+<div class="menu-weight">${item.weight}</div>
+<div class="menu-footer">
+<div class="menu-price">${item.price} zł</div>
+<button class="add-btn" onclick="event.stopPropagation();addToCart(${item.id})">+</button>
+</div>
+</div>
+`).join('');
+}
+
+function updateDeliveryInfo(field, value) { state.deliveryInfo[field] = value; }
+
+// ==================== CART ====================
+function addToCart(itemId) {
+const item = state.menu.find(i => i.id === itemId);
+const existing = state.cart.find(i => i.id === itemId);
+if (existing) { existing.qty++; } else { state.cart.push({ ...item, qty: 1 }); }
+updateCartUI();
+showToast(t('addToCart'), 'success');
+}
+
+function updateCartQty(itemId, delta) {
+const item = state.cart.find(i => i.id === itemId);
+if (item) {
+item.qty += delta;
+if (item.qty <= 0) { state.cart = state.cart.filter(i => i.id !== itemId); }
+updateCartUI();
+}
+}
+
+function updateCartUI() {
+const count = state.cart.reduce((sum, item) => sum + item.qty, 0);
+const total = state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+document.getElementById('cartCount').textContent = count;
+document.getElementById('cartTotal').textContent = total + ' zł';
+const cartBar = document.getElementById('cartBar');
+if (count > 0) { cartBar.classList.add('show'); } else { cartBar.classList.remove('show'); }
+}
+
+// ==================== CHECKOUT ====================
+function showCheckout() {
+if (state.cart.length === 0) { showToast(t('cartEmpty'), 'error'); return; }
+const total = state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+const checkoutContent = document.getElementById('checkoutContent');
+checkoutContent.innerHTML = `
+<div style="margin-bottom:24px">
+<h3 style="margin-bottom:16px;font-size:16px;color:var(--muted)">${t('orderSummary')}</h3>
+${state.cart.map(item => `
+<div class="cart-item">
+<div class="cart-item-info">
+<span class="cart-item-emoji">${item.emoji}</span>
+<span class="cart-item-name">${getItemName(item)}</span>
+</div>
+<div class="cart-item-qty">
+<button class="qty-btn" onclick="updateCartQty(${item.id}, -1)">−</button>
+<span style="font-weight:600;min-width:20px;text-align:center">${item.qty}</span>
+<button class="qty-btn" onclick="updateCartQty(${item.id}, 1)">+</button>
+</div>
+<span class="cart-item-price">${item.price * item.qty} zł</span>
+</div>
+`).join('')}
+<div style="display:flex;justify-content:space-between;padding:16px 0;margin-top:16px;border-top:2px solid var(--border);font-weight:700;font-size:20px">
+<span>${t('total')}</span>
+<span style="color:var(--primary)">${total} zł</span>
+</div>
+</div>
+
+<h3 style="margin-bottom:16px;font-size:16px;color:var(--muted)">${t('paymentTitle')}</h3>
+<div class="payment-selector">
+<div class="payment-btn ${state.paymentMethod === 'cash' ? 'active' : ''}" onclick="setPayment('cash')">
+<div class="payment-icon">💵</div>
+<div class="payment-label">${t('cash')}</div>
+</div>
+<div class="payment-btn ${state.paymentMethod === 'card' ? 'active' : ''}" onclick="setPayment('card')">
+<div class="payment-icon">💳</div>
+<div class="payment-label">${t('card')}</div>
+</div>
+</div>
+
+<button onclick="confirmOrder()" style="width:100%;padding:18px;background:linear-gradient(135deg,var(--primary),var(--primary2));border:none;border-radius:14px;color:#ffffff;font-size:17px;font-weight:700;cursor:pointer;margin-top:24px;box-shadow:0 4px 20px rgba(255,107,53,0.4);transition:var(--transition)" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+✅ ${t('confirmOrder')}
+</button>
+`;
+document.getElementById('checkoutModal').classList.add('open');
+}
+
+function setPayment(method) { state.paymentMethod = method; showCheckout(); }
+
+function confirmOrder() {
+const order = {
+id: Date.now(),
+items: [...state.cart],
+total: state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0),
+type: state.orderType,
+time: state.selectedTime,
+payment: state.paymentMethod,
+status: 'new',
+delivery: state.orderType === 'delivery' ? { ...state.deliveryInfo } : null,
+createdAt: new Date().toISOString(),
+createdBy: state.userName || t('cashier')
+};
+state.orders.push(order);
+localStorage.setItem('orders', JSON.stringify(state.orders));
+state.cart = [];
+state.deliveryInfo = { address: '', phone: '', note: '' };
+updateCartUI();
+closeModal('checkoutModal');
+printReceipt(order);
+showToast(t('orderCreated'), 'success');
+renderPage();
+}
+
+function printReceipt(order) {
+const typeText = order.type === 'table' ? t('receiptType.table') : t('receiptType.delivery');
+const paymentText = order.payment === 'cash' ? t('receiptPayment.cash') : t('receiptPayment.card');
+const receipt = `════════════════════════════════\n${t('receiptHeader')}\nZamówienie #${order.id.toString().slice(-6)}\n════════════════════════════════\n\n${order.items.map(item => `${getItemName(item)} ×${item.qty}`).join('\n')}\n\n════════════════════════════════\nRAZEM: ${order.total} zł\n════════════════════════════════\n\nTyp: ${typeText}\nPłatność: ${paymentText}\nCzas: ${order.time}${order.delivery ? `\n📍 ${order.delivery.address}\n📞 ${order.delivery.phone}\n📝 ${order.delivery.note || ''}` : ''}\n\n${new Date().toLocaleString(currentLang === 'pl' ? 'pl-PL' : 'ru-RU')}`;
+console.log(receipt);
+alert(t('receiptTitle') + '\n\n' + receipt);
+}
+
+// ==================== ORDERS ====================
+function renderOrders(container) {
+const sortedOrders = [...state.orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+if (sortedOrders.length === 0) {
+container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">${t('noOrders')}</div><div class="empty-state-desc">${t('emptyOrders')}</div></div>`;
+return;
+}
+container.innerHTML = `
+<div class="section-title">📋 ${t('orders')}</div>
+<div class="orders-list">
+${sortedOrders.map(order => `
+<div class="order-card">
+<div class="order-header">
+<div>
+<div class="order-id">Zamówienie #${order.id.toString().slice(-6)}</div>
+<div class="order-time">${new Date(order.createdAt).toLocaleString(currentLang === 'pl' ? 'pl-PL' : 'ru-RU')}</div>
+</div>
+<span class="order-status ${order.status}">${t('orderStatus.' + order.status)}</span>
+</div>
+<div class="order-items">${order.items.map(item => `• ${getItemName(item)} ×${item.qty}`).join('<br>')}</div>
+<div class="order-total">${order.total} zł</div>
+<div class="order-meta">
+<span>👤 ${order.createdBy}</span>
+<span>${order.type === 'table' ? '🏠 ' + t('dineIn') : '🚚 ' + t('delivery')}</span>
+<span>${order.payment === 'cash' ? '💵 ' + t('cash') : '💳 ' + t('card')}</span>
+</div>
+${order.delivery ? `<div style="margin-top:10px;font-size:12px;color:var(--muted);padding:10px;background:var(--card2);border-radius:var(--radius-sm)">📍 ${order.delivery.address}<br>📞 ${order.delivery.phone}${order.delivery.note ? '<br>📝 ' + order.delivery.note : ''}</div>` : ''}
+<div class="order-actions">
+<button class="action-btn print" onclick="reprintReceipt(${order.id})">${t('reprint')}</button>
+${order.status === 'new' ? `<button class="action-btn complete" onclick="updateOrderStatus(${order.id}, 'cooking')">${t('cooking')}</button>` : ''}
+${order.status === 'cooking' ? `<button class="action-btn complete" onclick="updateOrderStatus(${order.id}, 'ready')">${t('ready')}</button>` : ''}
+${order.status === 'ready' ? `<button class="action-btn complete" onclick="updateOrderStatus(${order.id}, 'completed')">${t('completed')}</button>` : ''}
+${state.userRole === 'admin' ? `<button class="action-btn delete" onclick="deleteOrder(${order.id})">${t('delete')}</button>` : ''}
+</div>
+</div>
+`).join('')}
+</div>
+`;
+}
+
+function updateOrderStatus(orderId, status) {
+const order = state.orders.find(o => o.id === orderId);
+if (order) {
+order.status = status;
+localStorage.setItem('orders', JSON.stringify(state.orders));
+renderPage();
+showToast(t('statusUpdated'), 'success');
+}
+}
+
+function deleteOrder(orderId) {
+if (state.userRole !== 'admin') { showToast(t('adminOnly'), 'error'); return; }
+if (confirm('Czy na pewno chcesz usunąć zamówienie? / Вы уверены, что хотите удалить заказ?')) {
+state.orders = state.orders.filter(o => o.id !== orderId);
+localStorage.setItem('orders', JSON.stringify(state.orders));
+renderPage();
+showToast(t('orderDeleted'), 'success');
+}
+}
+
+function reprintReceipt(orderId) {
+const order = state.orders.find(o => o.id === orderId);
+if (order) { printReceipt(order); }
+}
+
+// ==================== STATISTICS ====================
+function renderStatistics(container) {
+const completedOrders = state.orders.filter(o => o.status === 'completed');
+const totalRevenue = completedOrders.reduce((sum, o) => sum + o.total, 0);
+const todayOrders = state.orders.filter(o => new Date(o.createdAt).toDateString() === new Date().toDateString());
+const todayRevenue = todayOrders.reduce((sum, o) => sum + o.total, 0);
+const itemStats = {};
+state.orders.forEach(order => {
+order.items.forEach(item => {
+const name = getItemName(item);
+if (!itemStats[name]) { itemStats[name] = { qty: 0, revenue: 0 }; }
+itemStats[name].qty += item.qty;
+itemStats[name].revenue += item.price * item.qty;
+});
+});
+const popularItems = Object.entries(itemStats).sort((a, b) => b[1].qty - a[1].qty).slice(0, 5);
+
+container.innerHTML = `
+<div class="section-title">📊 ${t('statsTitle')}</div>
+<div class="stats-grid">
+<div class="stat-card"><div class="stat-value">${state.orders.length}</div><div class="stat-label">${t('totalOrders')}</div></div>
+<div class="stat-card"><div class="stat-value">${totalRevenue} zł</div><div class="stat-label">${t('totalRevenue')}</div></div>
+<div class="stat-card"><div class="stat-value">${todayOrders.length}</div><div class="stat-label">${t('todayOrders')}</div></div>
+<div class="stat-card"><div class="stat-value">${todayRevenue} zł</div><div class="stat-label">${t('todayRevenue')}</div></div>
+</div>
+${popularItems.length > 0 ? `
+<div style="margin-top:28px">
+<h3 style="margin-bottom:16px;font-size:16px;color:var(--muted)">${t('popularItems')}</h3>
+${popularItems.map(([name, stats]) => `
+<div style="display:flex;justify-content:space-between;padding:14px 18px;background:var(--card);border-radius:var(--radius-sm);margin-bottom:10px;border:1px solid var(--border);transition:var(--transition)" onmouseover="this.style.transform='translateX(5px)'">
+<span style="font-weight:600">${name}</span>
+<span style="color:var(--primary);font-weight:700">${stats.qty} шт. (${stats.revenue} zł)</span>
+</div>
+`).join('')}
+</div>
+` : ''}
+`;
+}
+
+// ==================== MENU PAGE ====================
+function renderMenuPage(container) {
+container.innerHTML = `
+<div class="section-title">🍱 ${t('menu')}</div>
+<div class="category-tabs" id="categoryTabs"></div>
+<div class="menu-grid" id="menuGrid"></div>
+`;
+renderCategories();
+renderMenuItems();
+}
+
+// ==================== UTILITIES ====================
+function showToast(message, type = 'success') {
+const toast = document.getElementById('toast');
+toast.textContent = message;
+toast.className = `toast ${type} show`;
+setTimeout(() => { toast.classList.remove('show'); }, 3000);
+}
+
+function closeModal(modalId) { document.getElementById(modalId).classList.remove('open'); }
+
+document.addEventListener('click', (e) => {
+if (e.target.classList.contains('modal-overlay')) { e.target.classList.remove('open'); }
+});
+
+// ==================== ADMIN PANEL ====================
+function showAdminPage(container) {
+container.innerHTML = `
+<div class="section-title">⚙️ Panel Administratora / Админ-панель</div>
+<div style="max-width:400px;margin:0 auto">
+<div style="background:var(--card);padding:30px;border-radius:var(--radius);border:1px solid var(--border)">
+<h3 style="margin-bottom:20px;text-align:center">🔒 Wprowadź hasło / Введите пароль</h3>
+<div class="form-group">
+<label>🔑 Hasło / Пароль</label>
+<input type="password" id="adminPassword" placeholder="••••••" style="text-align:center;font-size:18px;letter-spacing:4px">
+</div>
+<button onclick="checkAdminPassword()" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--primary),var(--primary2));border:none;border-radius:12px;color:#ffffff;font-size:16px;font-weight:700;cursor:pointer;margin-top:12px">
+🔓 Zaloguj / Войти
+</button>
+<p style="text-align:center;margin-top:16px;font-size:12px;color:var(--muted)">💡 Hasło: admin</p>
+</div>
+</div>
+`;
+}
+
+function checkAdminPassword() {
+const password = document.getElementById('adminPassword').value;
+if (password === 'admin') {
+state.userRole = 'admin';
+document.getElementById('userRole').textContent = t('admin');
+showToast('Zalogowano jako administrator! / Вы вошли как администратор!', 'success');
+showAdminPanel();
+} else {
+showToast('Błędne hasło! / Неверный пароль!', 'error');
+}
+}
+
+function showAdminPanel() {
+const container = document.getElementById('app');
+container.innerHTML = `
+<div class="section-title">⚙️ ${state.userRole === 'admin' ? 'Panel Administratora' : 'Admin'}</div>
+${state.userRole === 'admin' ? `
+<div class="stats-grid" style="margin-bottom:24px">
+<div class="stat-card" onclick="openEditMenuModal()" style="cursor:pointer">
+<div class="stat-value">🍱</div>
+<div class="stat-label" style="font-size:14px">Edytuj Menu</div>
+</div>
+<div class="stat-card" onclick="showAddItem()" style="cursor:pointer">
+<div class="stat-value">➕</div>
+<div class="stat-label" style="font-size:14px">Dodaj danie</div>
+</div>
+<div class="stat-card" onclick="resetMenu()" style="cursor:pointer">
+<div class="stat-value">🔄</div>
+<div class="stat-label" style="font-size:14px">Resetuj Menu</div>
+</div>
+</div>
+
+<div style="background:var(--card);padding:20px;border-radius:var(--radius);border:1px solid var(--border)">
+<h3 style="margin-bottom:16px">📋 Lista dań w menu</h3>
+<div style="max-height:500px;overflow-y:auto">
+${state.menu.map(item => `
+<div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--card2);border-radius:var(--radius-sm);margin-bottom:8px;border:1px solid var(--border)">
+<span style="font-size:28px">${item.emoji}</span>
+<div style="flex:1">
+<div style="font-weight:600">${getItemName(item)}</div>
+<div style="font-size:12px;color:var(--muted)">${item.weight} | ${item.price} zł</div>
+</div>
+<button class="action-btn print" onclick="openEditItemModal(${item.id})" style="padding:6px 12px;font-size:11px">✏️ Edytuj</button>
+</div>
+`).join('')}
+</div>
+</div>
+` : `<div class="empty-state"><div class="empty-state-icon">🔒</div><div class="empty-state-text">Brak dostępu</div><div class="empty-state-desc">Tylko administrator może edytować menu</div></div>`}
+`;
+}
+
+function openEditMenuModal() {
+document.getElementById('checkoutTitle').textContent = '🍱 Edytuj Menu / Редактировать меню';
+const checkoutContent = document.getElementById('checkoutContent');
+checkoutContent.innerHTML = `
+<div style="margin-bottom:20px">
+<h3 style="margin-bottom:16px">📋 Wybierz kategorię do edycji</h3>
+<div class="category-tabs">
+${CATEGORIES.filter(c => c.id !== 'all').map(cat => `
+<div class="category-tab" onclick="showCategoryItemsInModal('${cat.id}')">${cat.emoji} ${getCategoryName(cat)}</div>
+`).join('')}
+</div>
+</div>
+<div id="categoryItemsContainer"></div>
+`;
+document.getElementById('checkoutModal').classList.add('open');
+}
+
+function showCategoryItemsInModal(categoryId) {
+const container = document.getElementById('categoryItemsContainer');
+const items = state.menu.filter(item => item.category === categoryId);
+container.innerHTML = `
+<h3 style="margin:20px 0 12px;font-size:16px;color:var(--muted)">${getCategoryName(CATEGORIES.find(c => c.id === categoryId))}</h3>
+${items.map(item => `
+<div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--card2);border-radius:var(--radius-sm);margin-bottom:8px;border:1px solid var(--border)">
+<span style="font-size:24px">${item.emoji}</span>
+<div style="flex:1">
+<div style="font-weight:600">${getItemName(item)}</div>
+<div style="font-size:12px;color:var(--muted)">${item.weight}</div>
+</div>
+<div style="font-weight:700;color:var(--primary)">${item.price} zł</div>
+<button class="action-btn print" onclick="openEditItemModal(${item.id})" style="padding:6px 12px;font-size:11px">✏️</button>
+</div>
+`).join('')}
+`;
+}
+
+function openEditItemModal(itemId) {
+const item = state.menu.find(i => i.id === itemId);
+if (!item) return;
+state.editingItem = item;
+document.getElementById('checkoutTitle').textContent = '✏️ Edytuj danie / Редактировать блюдо';
+const checkoutContent = document.getElementById('checkoutContent');
+checkoutContent.innerHTML = `
+<div class="form-group">
+<label>🍱 Emoji</label>
+<input type="text" id="editEmoji" value="${item.emoji}" style="font-size:24px;text-align:center">
+</div>
+<div class="form-group">
+<label>📝 Nazwa (PL) / Название (PL)</label>
+<input type="text" id="editNamePL" value="${typeof item.name === 'object' ? item.name.pl : item.name}">
+</div>
+<div class="form-group">
+<label>📝 Nazwa (RU) / Название (RU)</label>
+<input type="text" id="editNameRU" value="${typeof item.name === 'object' ? item.name.ru : item.name}">
+</div>
+<div class="form-group">
+<label>💰 Cena (zł) / Цена (zł)</label>
+<input type="number" id="editPrice" value="${item.price}" min="0" step="0.5">
+</div>
+<div class="form-group">
+<label>⚖️ Waga / Вес</label>
+<input type="text" id="editWeight" value="${item.weight}">
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px">
+<button onclick="saveMenuItem()" style="padding:14px;background:linear-gradient(135deg,var(--success),#00cc6a);border:none;border-radius:12px;color:#ffffff;font-size:15px;font-weight:700;cursor:pointer">✅ Zapisz / Сохранить</button>
+<button onclick="openEditMenuModal()" style="padding:14px;background:var(--card);border:2px solid var(--border);border-radius:12px;color:var(--text);font-size:15px;font-weight:600;cursor:pointer">↩️ Anuluj / Отмена</button>
+</div>
+`;
+}
+
+function saveMenuItem() {
+if (!state.editingItem) return;
+const emoji = document.getElementById('editEmoji').value;
+const namePL = document.getElementById('editNamePL').value;
+const nameRU = document.getElementById('editNameRU').value;
+const price = parseFloat(document.getElementById('editPrice').value);
+const weight = document.getElementById('editWeight').value;
+if (!namePL || !nameRU || isNaN(price) || price < 0) {
+showToast('Wypełnij wszystkie pola! / Заполните все поля!', 'error');
+return;
+}
+const itemIndex = state.menu.findIndex(i => i.id === state.editingItem.id);
+if (itemIndex !== -1) {
+state.menu[itemIndex] = { ...state.menu[itemIndex], emoji, name: { pl: namePL, ru: nameRU }, price, weight };
+localStorage.setItem('menu', JSON.stringify(state.menu));
+showToast('Zapisano zmiany! / Изменения сохранены!', 'success');
+openEditMenuModal();
+}
+}
+
+function resetMenu() {
+if (state.userRole !== 'admin') { showToast(t('adminOnly'), 'error'); return; }
+if (confirm('Czy na pewno chcesz zresetować menu do domyślnych ustawień? / Вы уверены, что хотите сбросить menu до настроек по умолчанию?')) {
+localStorage.removeItem('menu');
+state.menu = JSON.parse(JSON.stringify(MENU));
+showAdminPage(document.getElementById('app'));
+showToast('Menu zresetowane! / Меню сброшено!', 'success');
+}
+}
+
+function showAddItem() {
+if (state.userRole !== 'admin') { showToast(t('adminOnly'), 'error'); return; }
+state.editingItem = null;
+const checkoutContent = document.getElementById('checkoutContent');
+document.getElementById('checkoutTitle').textContent = '➕ Dodaj nowe danie / Добавить новое блюдо';
+checkoutContent.innerHTML = `
+<div class="form-group">
+<label>🍱 Emoji</label>
+<input type="text" id="editEmoji" placeholder="🍣" value="🍣" style="font-size:24px;text-align:center">
+</div>
+<div class="form-group">
+<label>📝 Nazwa (PL) / Название (PL) *</label>
+<input type="text" id="editNamePL" placeholder="np. Sushi Deluxe">
+</div>
+<div class="form-group">
+<label>📝 Nazwa (RU) / Название (RU) *</label>
+<input type="text" id="editNameRU" placeholder="напр. Суши Делюкс">
+</div>
+<div class="form-group">
+<label>💰 Cena (zł) / Цена (zł) *</label>
+<input type="number" id="editPrice" placeholder="25" min="0" step="0.5">
+</div>
+<div class="form-group">
+<label>⚖️ Waga / Вес *</label>
+<input type="text" id="editWeight" placeholder="np. 250g">
+</div>
+<div class="form-group">
+<label>📂 Kategoria / Категория *</label>
+<select id="editCategory" style="width:100%;padding:16px;background:var(--card2);border:2px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:16px">
+${CATEGORIES.filter(c => c.id !== 'all').map(cat => `<option value="${cat.id}">${cat.emoji} ${getCategoryName(cat)}</option>`).join('')}
+</select>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px">
+<button onclick="saveNewItem()" style="padding:14px;background:linear-gradient(135deg,var(--success),#00cc6a);border:none;border-radius:12px;color:#ffffff;font-size:15px;font-weight:700;cursor:pointer">✅ Dodaj / Добавить</button>
+<button onclick="showAdminPanel()" style="padding:14px;background:var(--card);border:2px solid var(--border);border-radius:12px;color:var(--text);font-size:15px;font-weight:600;cursor:pointer">↩️ Anuluj / Отмена</button>
+</div>
+`;
+document.getElementById('checkoutModal').classList.add('open');
+}
+
+function saveNewItem() {
+const emoji = document.getElementById('editEmoji').value || '🍽️';
+const namePL = document.getElementById('editNamePL').value.trim();
+const nameRU = document.getElementById('editNameRU').value.trim();
+const price = parseFloat(document.getElementById('editPrice').value);
+const weight = document.getElementById('editWeight').value.trim();
+const category = document.getElementById('editCategory').value;
+if (!namePL || !nameRU || isNaN(price) || price < 0 || !weight || !category) {
+showToast('Wypełnij wszystkie pola! / Заполните все поля!', 'error');
+return;
+}
+const newItem = { id: Date.now(), emoji, name: { pl: namePL, ru: nameRU }, price, weight, category };
+state.menu.push(newItem);
+localStorage.setItem('menu', JSON.stringify(state.menu));
+closeModal('checkoutModal');
+showAdminPanel();
+showToast('Dodano nowe danie! / Новое блюдо добавлено!', 'success');
+}
+
+// ==================== START ====================
+init();
+</script>
+</body>
+</html>

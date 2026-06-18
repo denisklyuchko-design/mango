@@ -788,7 +788,15 @@ showToast(t('statusUpdated'), 'success');
 }
 
 function deleteOrder(orderId) {
-if (state.userRole !== 'admin') { showToast(t('adminOnly'), 'error'); return; }
+if (state.userRole !== 'admin') {
+showToast(t('adminOnly'), 'error');
+return;
+}
+const order = state.orders.find(o => o.id === orderId);
+if (!order) {
+showToast('Zamówienie nie znalezione / Заказ не найден', 'error');
+return;
+}
 if (confirm('Czy na pewno chcesz usunąć zamówienie? / Вы уверены, что хотите удалить заказ?')) {
 state.orders = state.orders.filter(o => o.id !== orderId);
 localStorage.setItem('orders', JSON.stringify(state.orders));
